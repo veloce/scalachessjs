@@ -1,0 +1,3 @@
+[submodule "submodules/scalachess"]
+	path = submodules/scalachess
+	url = git@github.com:dohzya/scalachess.git

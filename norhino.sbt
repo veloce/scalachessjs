@@ -1,0 +1,1 @@
+scalaJSUseRhino in Global := false

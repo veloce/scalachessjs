@@ -11,7 +11,10 @@
             console.info(e.data.payload);
             break;
           case 'dests':
-            console.log(e.data.payload);
+            console.info('dest', e.data.payload);
+            break;
+          case 'move':
+            console.info('move', e.data.payload);
             break;
           case 'error':
             throw new Error(e.data.payload);
@@ -23,6 +26,15 @@
         payload: {
           fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
           variant: 'kingOfTheHill'
+        }
+      });
+      worker.postMessage({
+        topic: 'move',
+        payload: {
+          fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+          variant: 'kingOfTheHill',
+          orig: 'e2',
+          dest: 'e4'
         }
       });
     </script>

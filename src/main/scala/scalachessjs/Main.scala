@@ -1,9 +1,12 @@
 package scalachessjs
 
+import scala.collection.mutable.Map
+
 import scala.scalajs.js.JSApp
 import scala.scalajs.js
 import org.scalajs.dom
 import js.Dynamic.{ global => g, newInstance => jsnew, literal => obj }
+import js.JSConverters._
 
 import chess.{ Valid, Success, Failure, Board, Game, Color, Pos }
 import chess.variant.Variant
@@ -24,6 +27,12 @@ object Main extends JSApp {
       val data = e.data.asInstanceOf[Message]
       val payload = data.payload.asInstanceOf[js.Dynamic]
       data.topic match {
+        case "info" => {
+          self.postMessage(obj(
+            "topic" -> "info",
+            "payload" -> "OK"
+          ))
+        }
         case "dests" => getDests(payload.fen.asInstanceOf[String], chess.variant.Standard)
       }
     })
@@ -61,11 +70,11 @@ object Main extends JSApp {
     }
   }
 
-  private def possibleDests(game: Game, color: Color): Map[Pos, List[Pos]] = {
-    val occ = game.board.occupation(color).toList
+  private def possibleDests(game: Game, color: Color): js.Dictionary[js.Array[String]] = {
+    val occ = game.board.occupation(color)
     occ.map(o => o -> game.board.destsFrom(o)).collect {
-      case (p, Some(d)) if d.nonEmpty => (p, d)
-    }.toMap
+      case (p, Some(d)) if d.nonEmpty => (p.toString, d.map(_.toString).toJSArray)
+    }.toMap.toJSDictionary
   }
 
 }

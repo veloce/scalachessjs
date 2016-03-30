@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Scalachessjs test</title>
+    <script>
+      var worker = new Worker('target/scala-2.11/scalachessjs-fastopt.js');
+      worker.addEventListener('message', function(e) {
+        switch (e.data.topic) {
+          case 'info':
+            console.info(e.data.payload);
+            break;
+          case 'dests':
+            console.log(e.data.payload);
+            break;
+        }
+      });
+      worker.postMessage({
+        topic: 'dests',
+        payload: {
+          fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Scalachessjs test page</h1>
+  </body>
+</html>

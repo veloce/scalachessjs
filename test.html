@@ -13,12 +13,16 @@
           case 'dests':
             console.log(e.data.payload);
             break;
+          case 'error':
+            throw new Error(e.data.payload);
+            break;
         }
       });
       worker.postMessage({
         topic: 'dests',
         payload: {
-          fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+          fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+          variant: 'kingOfTheHill'
         }
       });
     </script>

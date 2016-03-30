@@ -1,22 +1,13 @@
 package scalachessjs
 
-import scala.collection.mutable.Map
-
 import scala.scalajs.js.JSApp
 import scala.scalajs.js
 import org.scalajs.dom
-import js.Dynamic.{ global => g, newInstance => jsnew, literal => obj }
+import js.Dynamic.{ newInstance => jsnew, literal => jsobj }
 import js.JSConverters._
 
-import chess.{ Valid, Success, Failure, Board, Game, Color, Pos }
+import chess.{ Board, Game, Color, Pos, PromotableRole }
 import chess.variant.Variant
-import chess.format.Forsyth
-
-@js.native
-trait Message extends js.Object {
-  val topic: String
-  val payload: js.Object
-}
 
 object Main extends JSApp {
   def main(): Unit = {
@@ -28,53 +19,60 @@ object Main extends JSApp {
       val payload = data.payload.asInstanceOf[js.Dynamic]
       data.topic match {
         case "info" => {
-          self.postMessage(obj(
-            "topic" -> "info",
-            "payload" -> "OK"
+          self.postMessage(Message(
+            topic = "info",
+            payload = "OK"
           ))
         }
-        case "dests" => getDests(payload.fen.asInstanceOf[String], chess.variant.Standard)
+        case "dests" => {
+          val key = payload.variant.asInstanceOf[js.UndefOr[String]]
+          key.toOption.flatMap(Variant(_)).fold(sendError(s"variant $key unknown")) { variant =>
+            getDests(variant, payload.fen.asInstanceOf[String])
+          }
+        }
       }
     })
 
-    def getDests(fen: String, variant: Variant): Unit = {
-      val game = fenToGame(fen, variant)
-      game.fold(e => sendError(e.head), g => {
-        self.postMessage(obj(
-          "topic" -> "dests",
-          "payload" -> obj(
-            "dests" -> possibleDests(g, g.player)
-          )
-        ))
-      })
+    def getDests(variant:Variant, fen: String): Unit = {
+      val game = Game(Some(variant), Some(fen))
+      self.postMessage(Message(
+        topic = "dests",
+        payload = jsobj(
+          "dests" -> possibleDests(game)
+        )
+      ))
     }
 
     def sendError(error: String): Unit =
-      self.postMessage(obj(
-        "topic" -> "dests",
-        "payload" -> obj(
-          "error" -> error
-        )
+      self.postMessage(Message(
+        topic = "error",
+        payload = error
       ))
   }
 
-  private def fenToGame(positionString: String, variant: Variant): Valid[Game] = {
-    val situation = Forsyth << positionString
-    (situation.map { sit =>
-      sit.color -> sit.withVariant(variant).board
-    } match {
-      case Some(sit) => chess.success(sit)
-      case None => chess.failure("Could not construct situation from FEN" )
-    }).map {
-      case (color, board) => Game(variant).copy(board = board) withPlayer color
-    }
+  // private def move(game: Game, orig: Pos, dest: Pos, promotion: Option[PromotableRole]): js.Object = {
+  //   game(orig, dest, promotion) map {
+  //     case (game, move) =>
+  //       val movable = !game.situation.end
+  //       val fen = chess.format.Forsyth >> game
+  //   }
+  // }
+
+  private def possibleDests(game: Game): js.Dictionary[js.Array[String]] = {
+    game.situation.destinations.map {
+      case (pos, dests) => (pos.toString -> dests.map(_.toString).toJSArray)
+    }.toJSDictionary
   }
 
-  private def possibleDests(game: Game, color: Color): js.Dictionary[js.Array[String]] = {
-    val occ = game.board.occupation(color)
-    occ.map(o => o -> game.board.destsFrom(o)).collect {
-      case (p, Some(d)) if d.nonEmpty => (p.toString, d.map(_.toString).toJSArray)
-    }.toMap.toJSDictionary
-  }
+}
 
+@js.native
+trait Message extends js.Object {
+  val topic: String
+  val payload: js.Any
+}
+
+object Message {
+  def apply(topic: String, payload: js.Any): Message =
+    js.Dynamic.literal(topic = topic, payload = payload).asInstanceOf[Message]
 }

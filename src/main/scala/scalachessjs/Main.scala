@@ -9,38 +9,47 @@ import chess.{ Valid, Success, Failure, Board, Game, Color, Pos }
 import chess.variant.Variant
 import chess.format.Forsyth
 
+@js.native
+trait Message extends js.Object {
+  val topic: String
+  val payload: js.Object
+}
+
 object Main extends JSApp {
   def main(): Unit = {
 
-    val game = fenToGame("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", chess.variant.Standard)
-    game match {
-      case Failure(f) => println(f)
-      case Success(g) => {
-        val pd = possibleDests(g, Color.white)
-        println(s"game = $g")
-        println(s"occupation = ${g.board.occupation}")
-        println(s"dests = $pd")
-      }
-    }
-
     val self = js.Dynamic.global
+
     self.addEventListener("message", { (e: dom.MessageEvent) =>
-      e.data.topic match {
-        case "dests" => {
-          val game = fenToGame(e.data.payload.fen, chess.variant.Standard)
-          self.postMessage(obj(
-            "topic" -> "dests",
-            "payload" -> obj(
-              "dests" -> possibleDests(game, game.player)
-            )
-          ))
-        }
+      val data = e.data.asInstanceOf[Message]
+      val payload = data.payload.asInstanceOf[js.Dynamic]
+      data.topic match {
+        case "dests" => getDests(payload.fen.asInstanceOf[String], chess.variant.Standard)
       }
     })
 
+    def getDests(fen: String, variant: Variant): Unit = {
+      val game = fenToGame(fen, variant)
+      game.fold(e => sendError(e.head), g => {
+        self.postMessage(obj(
+          "topic" -> "dests",
+          "payload" -> obj(
+            "dests" -> possibleDests(g, g.player)
+          )
+        ))
+      })
+    }
+
+    def sendError(error: String): Unit =
+      self.postMessage(obj(
+        "topic" -> "dests",
+        "payload" -> obj(
+          "error" -> error
+        )
+      ))
   }
 
-  def fenToGame(positionString: String, variant: Variant): Valid[Game] = {
+  private def fenToGame(positionString: String, variant: Variant): Valid[Game] = {
     val situation = Forsyth << positionString
     (situation.map { sit =>
       sit.color -> sit.withVariant(variant).board
@@ -52,7 +61,7 @@ object Main extends JSApp {
     }
   }
 
-  def possibleDests(game: Game, color: Color): Map[Pos, List[Pos]] = {
+  private def possibleDests(game: Game, color: Color): Map[Pos, List[Pos]] = {
     val occ = game.board.occupation(color).toList
     occ.map(o => o -> game.board.destsFrom(o)).collect {
       case (p, Some(d)) if d.nonEmpty => (p, d)

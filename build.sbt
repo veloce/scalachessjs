@@ -19,3 +19,5 @@ scalacOptions ++= Seq(
   "-deprecation",
   "-unchecked",
   "-Ybackend:GenBCode", "-Ydelambdafy:method", "-target:jvm-1.8")
+
+scalaJSOutputWrapper := ("", "scalachessjs.Main().main();")

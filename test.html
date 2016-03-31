@@ -7,8 +7,8 @@
       var worker = new Worker('target/scala-2.11/scalachessjs-fastopt.js');
       worker.addEventListener('message', function(e) {
         switch (e.data.topic) {
-          case 'info':
-            console.info(e.data.payload);
+          case 'init':
+            console.info('init', e.data.payload);
             break;
           case 'dests':
             console.info('dest', e.data.payload);
@@ -22,6 +22,12 @@
           case 'error':
             throw new Error(e.data.payload);
             break;
+        }
+      });
+      worker.postMessage({
+        topic: 'init',
+        payload: {
+          variant: 'chess960'
         }
       });
       worker.postMessage({

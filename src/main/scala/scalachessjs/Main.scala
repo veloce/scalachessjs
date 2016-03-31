@@ -18,14 +18,20 @@ object Main extends JSApp {
     self.addEventListener("message", { e: dom.MessageEvent =>
       val data = e.data.asInstanceOf[Message]
       val payload = data.payload.asInstanceOf[js.Dynamic]
-      val key = payload.variant.asInstanceOf[js.UndefOr[String]]
-      val fen = payload.fen.asInstanceOf[String]
-      val variant = key.toOption.flatMap(Variant(_)) getOrElse Variant.default
+      val fen = payload.fen.asInstanceOf[js.UndefOr[String]].toOption
+      val variantKey = payload.variant.asInstanceOf[js.UndefOr[String]].toOption
+      val variant = variantKey.flatMap(Variant(_))
 
       data.topic match {
 
+        case "init" => {
+          init(variant, fen)
+        }
+
         case "dests" => {
-          key.toOption.flatMap(Variant(_)).fold(sendError(s"variant $key unknown")) { variant =>
+          fen.fold {
+            sendError("fen field is required for dests topic")
+          } { fen =>
             getDests(variant, fen)
           }
         }
@@ -37,11 +43,12 @@ object Main extends JSApp {
           (for {
             orig <- Pos.posAt(origS)
             dest <- Pos.posAt(destS)
-          } yield (orig, dest)) match {
-            case Some((orig, dest)) =>
+            fen <- fen
+          } yield (orig, dest, fen)) match {
+            case Some((orig, dest, fen)) =>
               getMove(variant, fen, orig, dest, Role.promotable(promotion.toOption))
             case None =>
-              sendError(s"move topic params: $origS, $destS are not valid")
+              sendError(s"move topic params: $origS, $destS, $fen are not valid")
           }
         }
 
@@ -53,18 +60,31 @@ object Main extends JSApp {
           (for {
             orig <- Pos.posAt(origS)
             dest <- Pos.posAt(destS)
-          } yield (orig, dest)) match {
-            case Some((orig, dest)) =>
+            fen <- fen
+          } yield (orig, dest, fen)) match {
+            case Some((orig, dest, fen)) =>
               getStep(variant, fen, orig, dest, Role.promotable(promotion.toOption), path)
             case None =>
-              sendError(s"step topic params: $origS, $destS are not valid")
+              sendError(s"step topic params: $origS, $destS, $fen are not valid")
           }
         }
       }
     })
 
-    def getDests(variant: Variant, fen: String): Unit = {
-      val game = Game(Some(variant), Some(fen))
+    def init(variant: Option[Variant], fen: Option[String]): Unit = {
+      val game = Game(variant, fen)
+      self.postMessage(Message(
+        topic = "init",
+        payload = jsobj(
+          "fen" -> (chess.format.Forsyth >> game),
+          "dests" -> possibleDests(game),
+          "player" -> game.player.name
+        )
+      ))
+    }
+
+    def getDests(variant: Option[Variant], fen: String): Unit = {
+      val game = Game(variant, Some(fen))
       self.postMessage(Message(
         topic = "dests",
         payload = jsobj(
@@ -73,8 +93,8 @@ object Main extends JSApp {
       ))
     }
 
-    def getMove(variant: Variant, fen: String, orig: Pos, dest: Pos, promotion: Option[PromotableRole]): Unit = {
-      val game = Game(Some(variant), Some(fen))
+    def getMove(variant: Option[Variant], fen: String, orig: Pos, dest: Pos, promotion: Option[PromotableRole]): Unit = {
+      val game = Game(variant, Some(fen))
       move(game, orig, dest, promotion) match {
         case Success(move) => {
           self.postMessage(Message(
@@ -86,8 +106,8 @@ object Main extends JSApp {
       }
     }
 
-    def getStep(variant: Variant, fen: String, orig: Pos, dest: Pos, promotion: Option[PromotableRole], path: String): Unit = {
-      val game = Game(Some(variant), Some(fen))
+    def getStep(variant: Option[Variant], fen: String, orig: Pos, dest: Pos, promotion: Option[PromotableRole], path: String): Unit = {
+      val game = Game(variant, Some(fen))
       move(game, orig, dest, promotion) match {
         case Success(move) => {
           self.postMessage(Message(

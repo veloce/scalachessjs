@@ -20,4 +20,5 @@ scalacOptions ++= Seq(
   "-unchecked",
   "-Ybackend:GenBCode", "-Ydelambdafy:method", "-target:jvm-1.8")
 
+emitSourceMaps := false
 scalaJSOutputWrapper := ("", "scalachessjs.Main().main();")

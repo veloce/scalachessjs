@@ -42,10 +42,11 @@ object Main extends JSApp {
           (for {
             orig <- Pos.posAt(origS)
             dest <- Pos.posAt(destS)
-          } yield {
-            getMove(variant, fen, orig, dest, Role.promotable(promotion.toOption))
-          }) orElse {
-            Some(sendError(s"move topic params: $origS, $destS are not valid"))
+          } yield (orig, dest)) match {
+            case Some((orig, dest)) =>
+              getMove(variant, fen, orig, dest, Role.promotable(promotion.toOption))
+            case None =>
+              sendError(s"move topic params: $origS, $destS are not valid")
           }
         }
       }

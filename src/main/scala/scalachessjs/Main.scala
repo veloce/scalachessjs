@@ -112,10 +112,10 @@ object Main extends JSApp {
   private def move(game: Game, orig: Pos, dest: Pos, promotion: Option[PromotableRole]): Valid[js.Object] = {
     game(orig, dest, promotion) map {
       case (newGame, move) =>
+        val movable = !newGame.situation.end
         new MovePayload {
           val fen = chess.format.Forsyth >> newGame
           val player = newGame.player.name
-          val movable = !newGame.situation.end
           val dests = (if (movable) Some(possibleDests(newGame)) else None).orUndefined
           val status = newGame.situation.status.map { s =>
             new js.Object {
@@ -156,7 +156,6 @@ object Message {
 trait MovePayload extends js.Object {
   val fen: String
   val player: String
-  val movable: Boolean
   val dests: js.UndefOr[js.Dictionary[js.Array[String]]]
   val status: js.UndefOr[js.Object]
   val check: Boolean

@@ -120,7 +120,7 @@ object Main extends JSApp {
       case (newGame, move) =>
         new MovePayload {
           val fen = chess.format.Forsyth >> newGame
-          val player = newGame.player.toString
+          val player = newGame.player.name
           val movable = !newGame.situation.end
           val dests = (if (movable) Some(possibleDests(newGame)) else None).orUndefined
           val status = newGame.situation.status.map { s =>

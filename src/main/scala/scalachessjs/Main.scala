@@ -23,12 +23,6 @@ object Main extends JSApp {
       val variant = key.toOption.flatMap(Variant(_)) getOrElse Variant.default
 
       data.topic match {
-        case "info" => {
-          self.postMessage(Message(
-            topic = "info",
-            payload = "OK"
-          ))
-        }
 
         case "dests" => {
           key.toOption.flatMap(Variant(_)).fold(sendError(s"variant $key unknown")) { variant =>

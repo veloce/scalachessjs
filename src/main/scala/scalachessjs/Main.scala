@@ -18,6 +18,10 @@ object Main extends JSApp {
     self.addEventListener("message", { e: dom.MessageEvent =>
       val data = e.data.asInstanceOf[Message]
       val payload = data.payload.asInstanceOf[js.Dynamic]
+      val key = payload.variant.asInstanceOf[js.UndefOr[String]]
+      val fen = payload.fen.asInstanceOf[String]
+      val variant = key.toOption.flatMap(Variant(_)) getOrElse Variant.default
+
       data.topic match {
         case "info" => {
           self.postMessage(Message(
@@ -27,17 +31,12 @@ object Main extends JSApp {
         }
 
         case "dests" => {
-          val key = payload.variant.asInstanceOf[js.UndefOr[String]]
-          val fen = payload.fen.asInstanceOf[String]
           key.toOption.flatMap(Variant(_)).fold(sendError(s"variant $key unknown")) { variant =>
             getDests(variant, fen)
           }
         }
 
         case "move" => {
-          val key = payload.variant.asInstanceOf[js.UndefOr[String]]
-          val variant = key.toOption.flatMap(Variant(_)) getOrElse Variant.default
-          val fen = payload.fen.asInstanceOf[String]
           val promotion = payload.promotion.asInstanceOf[js.UndefOr[String]]
           val origS = payload.orig.asInstanceOf[String]
           val destS = payload.dest.asInstanceOf[String]
@@ -53,9 +52,6 @@ object Main extends JSApp {
         }
 
         case "step" => {
-          val key = payload.variant.asInstanceOf[js.UndefOr[String]]
-          val variant = key.toOption.flatMap(Variant(_)) getOrElse Variant.default
-          val fen = payload.fen.asInstanceOf[String]
           val promotion = payload.promotion.asInstanceOf[js.UndefOr[String]]
           val origS = payload.orig.asInstanceOf[String]
           val destS = payload.dest.asInstanceOf[String]

@@ -16,6 +16,9 @@
           case 'move':
             console.info('move', e.data.payload);
             break;
+          case 'step':
+            console.info('step', e.data.payload);
+            break;
           case 'error':
             throw new Error(e.data.payload);
             break;
@@ -35,6 +38,16 @@
           variant: 'kingOfTheHill',
           orig: 'e2',
           dest: 'e4'
+        }
+      });
+      worker.postMessage({
+        topic: 'step',
+        payload: {
+          fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+          variant: 'threeCheck',
+          orig: 'e2',
+          dest: 'e4',
+          path: '0'
         }
       });
     </script>

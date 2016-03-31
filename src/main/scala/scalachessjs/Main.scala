@@ -25,6 +25,7 @@ object Main extends JSApp {
             payload = "OK"
           ))
         }
+
         case "dests" => {
           val key = payload.variant.asInstanceOf[js.UndefOr[String]]
           val fen = payload.fen.asInstanceOf[String]
@@ -32,6 +33,7 @@ object Main extends JSApp {
             getDests(variant, fen)
           }
         }
+
         case "move" => {
           val key = payload.variant.asInstanceOf[js.UndefOr[String]]
           val variant = key.toOption.flatMap(Variant(_)) getOrElse Variant.default
@@ -47,6 +49,25 @@ object Main extends JSApp {
               getMove(variant, fen, orig, dest, Role.promotable(promotion.toOption))
             case None =>
               sendError(s"move topic params: $origS, $destS are not valid")
+          }
+        }
+
+        case "step" => {
+          val key = payload.variant.asInstanceOf[js.UndefOr[String]]
+          val variant = key.toOption.flatMap(Variant(_)) getOrElse Variant.default
+          val fen = payload.fen.asInstanceOf[String]
+          val promotion = payload.promotion.asInstanceOf[js.UndefOr[String]]
+          val origS = payload.orig.asInstanceOf[String]
+          val destS = payload.dest.asInstanceOf[String]
+          val path = payload.path.asInstanceOf[String]
+          (for {
+            orig <- Pos.posAt(origS)
+            dest <- Pos.posAt(destS)
+          } yield (orig, dest)) match {
+            case Some((orig, dest)) =>
+              getStep(variant, fen, orig, dest, Role.promotable(promotion.toOption), path)
+            case None =>
+              sendError(s"step topic params: $origS, $destS are not valid")
           }
         }
       }
@@ -75,6 +96,22 @@ object Main extends JSApp {
       }
     }
 
+    def getStep(variant: Variant, fen: String, orig: Pos, dest: Pos, promotion: Option[PromotableRole], path: String): Unit = {
+      val game = Game(Some(variant), Some(fen))
+      move(game, orig, dest, promotion) match {
+        case Success(move) => {
+          self.postMessage(Message(
+            topic = "step",
+            payload = jsobj(
+              "step" -> move,
+              "path" -> path
+            )
+          ))
+        }
+        case Failure(errors) => sendError(errors.head)
+      }
+    }
+
     def sendError(error: String): Unit =
       self.postMessage(Message(
         topic = "error",
@@ -97,8 +134,9 @@ object Main extends JSApp {
             }
           }.orUndefined
           val check = newGame.situation.check
-          val san = newGame.pgnMoves.last
           val lastMove = js.Array(move.orig.toString, move.dest.toString)
+          val san = newGame.pgnMoves.last
+          val uci = move.toUci.uci
           val ply = newGame.turns
           val promotionLetter = promotion.map(_.forsyth).map(_.toString).orUndefined
         }
@@ -134,6 +172,7 @@ trait MovePayload extends js.Object {
   val check: Boolean
   val lastMove: js.Array[String]
   val san: String
+  val uci: String
   val ply: Int
   val promotionLetter: js.UndefOr[String]
 }

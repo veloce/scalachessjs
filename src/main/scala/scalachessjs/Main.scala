@@ -154,9 +154,12 @@ object Main extends JSApp {
           }.orUndefined
           val winner = newGame.situation.winner.map(_.name).orUndefined
           val check = newGame.situation.check
-          val lastMove = js.Array(move.orig.toString, move.dest.toString)
-          val san = newGame.pgnMoves.last
-          val uci = move.toUci.uci
+          val lastMove = jsobj(
+            "from" -> move.orig.toString,
+            "to" -> move.dest.toString,
+            "san" -> newGame.pgnMoves.last,
+            "uci" -> move.toUci.uci
+          )
           val ply = newGame.turns
           val promotionLetter = promotion.map(_.forsyth).map(_.toString).orUndefined
         }
@@ -199,9 +202,7 @@ trait MovePayload extends js.Object {
   val status: js.UndefOr[js.Object]
   val winner: js.UndefOr[String]
   val check: Boolean
-  val lastMove: js.Array[String]
-  val san: String
-  val uci: String
+  val lastMove: js.Dynamic
   val ply: Int
   val promotionLetter: js.UndefOr[String]
 }

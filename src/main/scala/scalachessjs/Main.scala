@@ -7,7 +7,7 @@ import js.Dynamic.{ newInstance => jsnew, literal => jsobj }
 import js.JSConverters._
 import js.annotation._
 
-import chess.{ Valid, Success, Failure, Board, Game, Color, Pos, Role, PromotableRole }
+import chess.{ Valid, Success, Failure, Board, Game, Color, Pos, Role, PromotableRole, Replay }
 import chess.variant.Variant
 
 object Main extends JSApp {
@@ -27,7 +27,6 @@ object Main extends JSApp {
         case "init" => {
           init(variant, fen)
         }
-
         case "dests" => {
           fen.fold {
             sendError("fen field is required for dests topic")
@@ -35,7 +34,6 @@ object Main extends JSApp {
             getDests(variant, fen)
           }
         }
-
         case "move" => {
           val promotion = payload.promotion.asInstanceOf[js.UndefOr[String]].toOption
           val origS = payload.orig.asInstanceOf[String]
@@ -111,8 +109,7 @@ object Main extends JSApp {
     game(orig, dest, promotion) map {
       case (newGame, move) =>
         val movable = !newGame.situation.end
-        new MovePayload {
-          val variant = newGame.board.variant.key
+        new SituationInfo {
           val fen = chess.format.Forsyth >> newGame
           val player = newGame.player.name
           val dests = (if (movable) Some(possibleDests(newGame)) else None).orUndefined
@@ -125,15 +122,43 @@ object Main extends JSApp {
           }.orUndefined
           val winner = newGame.situation.winner.map(_.name).orUndefined
           val check = newGame.situation.check
-          val lastMove = jsobj(
+          val lastMove = Some(jsobj(
             "from" -> move.orig.toString,
             "to" -> move.dest.toString,
             "san" -> newGame.pgnMoves.last,
-            "uci" -> move.toUci.uci
-          )
+            "uci" -> move.toUci.uci,
+            "promotionLetter" -> promotion.map(_.forsyth).map(_.toString).orUndefined
+          )).orUndefined
           val ply = newGame.turns
-          val promotionLetter = promotion.map(_.forsyth).map(_.toString).orUndefined
         }
+    }
+  }
+
+  private def gameToSituationInfo(game: Game, promotion: Option[PromotableRole]): js.Object = {
+    val movable = !game.situation.end
+    new SituationInfo {
+      val fen = chess.format.Forsyth >> game
+      val player = game.player.name
+      val dests = (if (movable) Some(possibleDests(game)) else None).orUndefined
+      val playable = game.situation.playable(true)
+      val status = game.situation.status.map { s =>
+        new js.Object {
+          val id = s.id
+          val name = s.name
+        }
+      }.orUndefined
+      val winner = game.situation.winner.map(_.name).orUndefined
+      val check = game.situation.check
+      val lastMove = game.board.history.lastMove.map { lm =>
+        jsobj(
+          "from" -> lm.origDest._1.toString,
+          "to" -> lm.origDest._2.toString,
+          "san" -> game.pgnMoves.last,
+          "uci" -> lm.uci,
+          "promotionLetter" -> promotion.map(_.forsyth).map(_.toString).orUndefined
+        )
+      }.orUndefined
+      val ply = game.turns
     }
   }
 
@@ -164,8 +189,7 @@ trait VariantInfo extends js.Object {
 }
 
 @ScalaJSDefined
-trait MovePayload extends js.Object {
-  val variant: String
+trait SituationInfo extends js.Object {
   val fen: String
   val player: String
   val dests: js.UndefOr[js.Dictionary[js.Array[String]]]
@@ -173,7 +197,6 @@ trait MovePayload extends js.Object {
   val status: js.UndefOr[js.Object]
   val winner: js.UndefOr[String]
   val check: Boolean
-  val lastMove: js.Dynamic
+  val lastMove: js.UndefOr[js.Dynamic]
   val ply: Int
-  val promotionLetter: js.UndefOr[String]
 }

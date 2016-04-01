@@ -145,12 +145,14 @@ object Main extends JSApp {
           val fen = chess.format.Forsyth >> newGame
           val player = newGame.player.name
           val dests = (if (movable) Some(possibleDests(newGame)) else None).orUndefined
+          val playable = newGame.situation.playable(true)
           val status = newGame.situation.status.map { s =>
             new js.Object {
               val id = s.id
               val name = s.name
             }
           }.orUndefined
+          val winner = newGame.situation.winner.map(_.name).orUndefined
           val check = newGame.situation.check
           val lastMove = js.Array(move.orig.toString, move.dest.toString)
           val san = newGame.pgnMoves.last
@@ -193,7 +195,9 @@ trait MovePayload extends js.Object {
   val fen: String
   val player: String
   val dests: js.UndefOr[js.Dictionary[js.Array[String]]]
+  val playable: Boolean
   val status: js.UndefOr[js.Object]
+  val winner: js.UndefOr[String]
   val check: Boolean
   val lastMove: js.Array[String]
   val san: String

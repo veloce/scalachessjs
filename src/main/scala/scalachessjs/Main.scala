@@ -76,6 +76,12 @@ object Main extends JSApp {
       self.postMessage(Message(
         topic = "init",
         payload = jsobj(
+          "variant" -> jsobj(
+            "key" -> game.board.variant.key,
+            "name" -> game.board.variant.name,
+            "shortName" -> game.board.variant.shortName,
+            "title" -> game.board.variant.title
+          ),
           "fen" -> (chess.format.Forsyth >> game),
           "dests" -> possibleDests(game),
           "player" -> game.player.name

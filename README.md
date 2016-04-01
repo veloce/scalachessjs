@@ -1,7 +1,7 @@
 # scalachessjs
 
-Port of the awesome [scalachess](https://github.com/ornicar/scalachess) to
-JavaScript, thanks to [Scala.js](https://www.scala-js.org/).
+Port of the awesome [scalachess](https://github.com/ornicar/scalachess) library
+to JavaScript, thanks to [Scala.js](https://www.scala-js.org/).
 
 ## Features
 
@@ -14,7 +14,7 @@ Atomic chess, Horde, Racing Kings, Crazyhouse!
 
 ### Message Format
 
-The same format is used for questions and answers:
+The same format is used for requests and responses:
 
 ```js
 {
@@ -24,7 +24,7 @@ The same format is used for questions and answers:
 ```
 
 The library will always reply with the same `topic` field of the request.
-`payload` is in either case request's args or response's data.
+`payload` is either request arguments or response data.
 
 ### Topics
 

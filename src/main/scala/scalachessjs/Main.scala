@@ -76,12 +76,12 @@ object Main extends JSApp {
       self.postMessage(Message(
         topic = "init",
         payload = jsobj(
-          "variant" -> jsobj(
-            "key" -> game.board.variant.key,
-            "name" -> game.board.variant.name,
-            "shortName" -> game.board.variant.shortName,
-            "title" -> game.board.variant.title
-          ),
+          "variant" -> new VariantInfo {
+            val key = game.board.variant.key
+            val name = game.board.variant.name
+            val shortName = game.board.variant.shortName
+            val title = game.board.variant.title
+          },
           "fen" -> (chess.format.Forsyth >> game),
           "dests" -> possibleDests(game),
           "player" -> game.player.name
@@ -94,6 +94,7 @@ object Main extends JSApp {
       self.postMessage(Message(
         topic = "dests",
         payload = jsobj(
+          "variant" -> game.board.variant.key,
           "dests" -> possibleDests(game)
         )
       ))
@@ -140,6 +141,7 @@ object Main extends JSApp {
       case (newGame, move) =>
         val movable = !newGame.situation.end
         new MovePayload {
+          val variant = newGame.board.variant.key
           val fen = chess.format.Forsyth >> newGame
           val player = newGame.player.name
           val dests = (if (movable) Some(possibleDests(newGame)) else None).orUndefined
@@ -164,7 +166,6 @@ object Main extends JSApp {
       case (pos, dests) => (pos.toString -> dests.map(_.toString).toJSArray)
     }.toJSDictionary
   }
-
 }
 
 @js.native
@@ -179,7 +180,16 @@ object Message {
 }
 
 @ScalaJSDefined
+trait VariantInfo extends js.Object {
+  val key: String
+  val name: String
+  val shortName: String
+  val title: String
+}
+
+@ScalaJSDefined
 trait MovePayload extends js.Object {
+  val variant: String
   val fen: String
   val player: String
   val dests: js.UndefOr[js.Dictionary[js.Array[String]]]

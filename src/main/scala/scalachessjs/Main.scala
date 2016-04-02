@@ -3,7 +3,7 @@ package scalachessjs
 import scala.scalajs.js.JSApp
 import scala.scalajs.js
 import org.scalajs.dom
-import js.Dynamic.{ newInstance => jsnew, literal => jsobj }
+import js.Dynamic.{ global => g, newInstance => jsnew, literal => jsobj }
 import js.JSConverters._
 import js.annotation._
 
@@ -109,32 +109,11 @@ object Main extends JSApp {
     game(orig, dest, promotion) map {
       case (newGame, move) =>
         val movable = !newGame.situation.end
-        new SituationInfo {
-          val fen = chess.format.Forsyth >> newGame
-          val player = newGame.player.name
-          val dests = (if (movable) Some(possibleDests(newGame)) else None).orUndefined
-          val playable = newGame.situation.playable(true)
-          val status = newGame.situation.status.map { s =>
-            new js.Object {
-              val id = s.id
-              val name = s.name
-            }
-          }.orUndefined
-          val winner = newGame.situation.winner.map(_.name).orUndefined
-          val check = newGame.situation.check
-          val lastMove = Some(jsobj(
-            "from" -> move.orig.toString,
-            "to" -> move.dest.toString,
-            "san" -> newGame.pgnMoves.last,
-            "uci" -> move.toUci.uci,
-            "promotionLetter" -> promotion.map(_.forsyth).map(_.toString).orUndefined
-          )).orUndefined
-          val ply = newGame.turns
-        }
+        gameToSituationInfo(newGame, promotion)
     }
   }
 
-  private def gameToSituationInfo(game: Game, promotion: Option[PromotableRole]): js.Object = {
+  private def gameToSituationInfo(game: Game, promotionRole: Option[PromotableRole]): js.Object = {
     val movable = !game.situation.end
     new SituationInfo {
       val fen = chess.format.Forsyth >> game
@@ -142,22 +121,22 @@ object Main extends JSApp {
       val dests = (if (movable) Some(possibleDests(game)) else None).orUndefined
       val playable = game.situation.playable(true)
       val status = game.situation.status.map { s =>
-        new js.Object {
-          val id = s.id
-          val name = s.name
-        }
+        jsobj(
+          "id" -> s.id,
+          "name" -> s.name
+        )
       }.orUndefined
       val winner = game.situation.winner.map(_.name).orUndefined
       val check = game.situation.check
+      val pgnMoves = game.pgnMoves.toJSArray
       val lastMove = game.board.history.lastMove.map { lm =>
         jsobj(
           "from" -> lm.origDest._1.toString,
           "to" -> lm.origDest._2.toString,
-          "san" -> game.pgnMoves.last,
-          "uci" -> lm.uci,
-          "promotionLetter" -> promotion.map(_.forsyth).map(_.toString).orUndefined
+          "uci" -> lm.uci
         )
       }.orUndefined
+      val promotion = promotionRole.map(_.forsyth).map(_.toString).orUndefined
       val ply = game.turns
     }
   }
@@ -197,6 +176,8 @@ trait SituationInfo extends js.Object {
   val status: js.UndefOr[js.Object]
   val winner: js.UndefOr[String]
   val check: Boolean
-  val lastMove: js.UndefOr[js.Dynamic]
+  val pgnMoves: js.Array[String]
+  val lastMove: js.UndefOr[js.Object]
+  val promotion: js.UndefOr[String]
   val ply: Int
 }

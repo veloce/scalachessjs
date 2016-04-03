@@ -9,6 +9,9 @@ to JavaScript, thanks to [Scala.js](https://www.scala-js.org/).
   computing chess logic.
 * Completely stateless: you send the complete game position for each request,
 either with FEN or PGN
+* Built from extensively tested code: the scala library is by itself well tested
+  and it also powers all the chess logic of the thousands of games being played
+  every day on [lichess.org](http://lichess.org).
 * Multi variants support: Chess 960, King Of The Hill, Three-check, Antichess,
 Atomic chess, Horde, Racing Kings, Crazyhouse!
 
@@ -16,11 +19,11 @@ Atomic chess, Horde, Racing Kings, Crazyhouse!
 
 `pgnMove` request can be slow, since the library will parse PGN and replay all
 moves to compute a position for each move. You should only use it when you want
-to a game status taking into account the threefold repetition rule (which can't
-be decided with a FEN string only).
+to know a game status that takes into account the threefold repetition rule
+(which can't be decided with a FEN string only).
 
-`fenMove` is faster and can be used at the same time when you only want to know
-a board situation or possible destinations.
+`fenMove` is faster and can be used at the same time. It is useful  when you
+only want to know a board situation or possible destinations.
 
 
 ## API
@@ -41,10 +44,12 @@ The library will always reply with the same `topic` field of the request.
 
 ### Topics
 
-* `init`: initialize the board with a givent variant
-* `dests`: get possible destinations for a given position
-* `move`: play a move for a given position
-* `step`: a variation of the `move` topic for game analysis purpose
+* `init` will initialize the board for a given variant
+* `dests` will get possible destinations for a given position
+* `fenMove` will play a move for a given position set by FEN
+* `pgnMove` will play a move for a given position set by an initial FEN and a
+list of PGN moves. Slower than `fenMove` but this is the only way to take into
+account the draw by threefold repetition rule.
 
 #### Init
 

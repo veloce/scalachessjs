@@ -13,8 +13,8 @@
           case 'dests':
             console.info('dest', e.data.payload);
             break;
-          case 'move':
-            console.info('move', e.data.payload);
+          case 'fenMove':
+            console.info('fenMove', e.data.payload);
             break;
           case 'error':
             throw new Error(e.data.payload);
@@ -35,7 +35,7 @@
         }
       });
       worker.postMessage({
-        topic: 'move',
+        topic: 'fenMove',
         payload: {
           fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
           variant: 'kingOfTheHill',
@@ -44,7 +44,7 @@
         }
       });
       worker.postMessage({
-        topic: 'move',
+        topic: 'fenMove',
         payload: {
           fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
           variant: 'threeCheck',

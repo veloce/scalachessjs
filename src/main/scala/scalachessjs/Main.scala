@@ -34,7 +34,7 @@ object Main extends JSApp {
             getDests(variant, fen)
           }
         }
-        case "move" => {
+        case "fenMove" => {
           val promotion = payload.promotion.asInstanceOf[js.UndefOr[String]].toOption
           val origS = payload.orig.asInstanceOf[String]
           val destS = payload.dest.asInstanceOf[String]
@@ -45,10 +45,27 @@ object Main extends JSApp {
             fen <- fen
           } yield (orig, dest, fen)) match {
             case Some((orig, dest, fen)) =>
-              getMove(variant, fen, orig, dest, Role.promotable(promotion), path)
+              fenMove(variant, fen, orig, dest, Role.promotable(promotion), path)
             case None =>
               sendError(s"step topic params: $origS, $destS, $fen are not valid")
           }
+        }
+        case "pgnMove" => {
+          // val promotion = payload.promotion.asInstanceOf[js.UndefOr[String]].toOption
+          // val origS = payload.orig.asInstanceOf[String]
+          // val destS = payload.dest.asInstanceOf[String]
+          // val pgnMoves = payload.pgnMoves.asInstanceOf[js.Array[String]].toList
+          // val initialFen = payload.initialFen.asInstanceOf[js.UndefOr[String]].toOption
+          // (for {
+          //   orig <- Pos.posAt(origS)
+          //   dest <- Pos.posAt(destS)
+          //   v <- variant
+          // } yield (orig, dest, v)) match {
+          //   case Some((orig, dest, v)) =>
+          //     pgnMove(v, initialFen, pgnMoves, orig, dest, Role.promotable(promotion))
+          //   case None =>
+          //     sendError(s"step topic params: $origS, $destS, $variant are not valid")
+          // }
         }
       }
     })
@@ -64,9 +81,7 @@ object Main extends JSApp {
             val shortName = game.board.variant.shortName
             val title = game.board.variant.title
           },
-          "fen" -> (chess.format.Forsyth >> game),
-          "dests" -> possibleDests(game),
-          "player" -> game.player.name
+          "setup" -> gameToSituationInfo(game)
         )
       ))
     }
@@ -76,21 +91,41 @@ object Main extends JSApp {
       self.postMessage(Message(
         topic = "dests",
         payload = jsobj(
-          "variant" -> game.board.variant.key,
           "dests" -> possibleDests(game)
         )
       ))
     }
 
-    def getMove(variant: Option[Variant], fen: String, orig: Pos, dest: Pos, promotion: Option[PromotableRole], path: Option[String]): Unit = {
+    def fenMove(variant: Option[Variant], fen: String, orig: Pos, dest: Pos, promotion: Option[PromotableRole], path: Option[String]): Unit = {
       val game = Game(variant, Some(fen))
       move(game, orig, dest, promotion) match {
-        case Success(move) => {
+        case Success(newSit) => {
           self.postMessage(Message(
-            topic = "move",
+            topic = "fenMove",
             payload = jsobj(
-              "move" -> move,
+              "situation" -> newSit,
               "path" -> path.orUndefined
+            )
+          ))
+        }
+        case Failure(errors) => sendError(errors.head)
+      }
+    }
+
+    def pgnMove(variant: Variant, initFen: Option[String], pgnMoves: List[String], orig: Pos, dest: Pos, promotion: Option[PromotableRole]): Unit = {
+      val vr = Replay(pgnMoves, initFen, variant)
+      vr.flatMap(replay => move(replay.state, orig, dest, promotion)) match {
+        case Success(newSit) => {
+          self.postMessage(Message(
+            topic = "pgnMove",
+            payload = jsobj(
+              "variant" -> new VariantInfo {
+                val key = variant.key
+                val name = variant.name
+                val shortName = variant.shortName
+                val title = variant.title
+              },
+              "situation" -> newSit
             )
           ))
         }
@@ -113,7 +148,7 @@ object Main extends JSApp {
     }
   }
 
-  private def gameToSituationInfo(game: Game, promotionRole: Option[PromotableRole]): js.Object = {
+  private def gameToSituationInfo(game: Game, promotionRole: Option[PromotableRole] = None): js.Object = {
     val movable = !game.situation.end
     new SituationInfo {
       val fen = chess.format.Forsyth >> game

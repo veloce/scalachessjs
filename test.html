@@ -43,18 +43,6 @@
           }
         });
       }
-      function test() {
-        console.time('test');
-        worker.postMessage({
-          topic: 'test',
-          payload: {
-            fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-            variant: 'kingOfTheHill',
-            orig: 'e2',
-            dest: 'e4'
-          }
-        });
-      }
       function fenMove() {
         console.time('fenMove');
         worker.postMessage({

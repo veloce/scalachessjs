@@ -103,6 +103,12 @@ object Main extends JSApp {
           self.postMessage(Message(
             topic = "fenMove",
             payload = jsobj(
+              "variant" -> new VariantInfo {
+                val key = game.board.variant.key
+                val name = game.board.variant.name
+                val shortName = game.board.variant.shortName
+                val title = game.board.variant.title
+              },
               "situation" -> newSit,
               "path" -> path.orUndefined
             )

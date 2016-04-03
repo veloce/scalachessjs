@@ -16,6 +16,9 @@
           case 'fenMove':
             console.info('fenMove', e.data.payload);
             break;
+          case 'pgnMove':
+            console.info('pgnMove', e.data.payload);
+            break;
           case 'error':
             throw new Error(e.data.payload);
             break;
@@ -51,6 +54,16 @@
           orig: 'e2',
           dest: 'e4',
           path: '0'
+        }
+      });
+      worker.postMessage({
+        topic: 'pgnMove',
+        payload: {
+          initialFen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+          variant: 'standard',
+          pgnMoves: ['e4', 'e5', 'Nf3', 'Nc6'],
+          orig: 'f1',
+          dest: 'b5'
         }
       });
     </script>

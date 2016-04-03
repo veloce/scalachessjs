@@ -51,21 +51,21 @@ object Main extends JSApp {
           }
         }
         case "pgnMove" => {
-          // val promotion = payload.promotion.asInstanceOf[js.UndefOr[String]].toOption
-          // val origS = payload.orig.asInstanceOf[String]
-          // val destS = payload.dest.asInstanceOf[String]
-          // val pgnMoves = payload.pgnMoves.asInstanceOf[js.Array[String]].toList
-          // val initialFen = payload.initialFen.asInstanceOf[js.UndefOr[String]].toOption
-          // (for {
-          //   orig <- Pos.posAt(origS)
-          //   dest <- Pos.posAt(destS)
-          //   v <- variant
-          // } yield (orig, dest, v)) match {
-          //   case Some((orig, dest, v)) =>
-          //     pgnMove(v, initialFen, pgnMoves, orig, dest, Role.promotable(promotion))
-          //   case None =>
-          //     sendError(s"step topic params: $origS, $destS, $variant are not valid")
-          // }
+          val promotion = payload.promotion.asInstanceOf[js.UndefOr[String]].toOption
+          val origS = payload.orig.asInstanceOf[String]
+          val destS = payload.dest.asInstanceOf[String]
+          val pgnMoves = payload.pgnMoves.asInstanceOf[js.Array[String]].toList
+          val initialFen = payload.initialFen.asInstanceOf[js.UndefOr[String]].toOption
+          (for {
+            orig <- Pos.posAt(origS)
+            dest <- Pos.posAt(destS)
+            v <- variant
+          } yield (orig, dest, v)) match {
+            case Some((orig, dest, v)) =>
+              pgnMove(v, initialFen, pgnMoves, orig, dest, Role.promotable(promotion))
+            case None =>
+              sendError(s"step topic params: $origS, $destS, $variant are not valid")
+          }
         }
       }
     })

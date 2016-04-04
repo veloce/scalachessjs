@@ -56,6 +56,8 @@ object Main extends JSApp {
           val destS = payload.dest.asInstanceOf[String]
           val pgnMoves = payload.pgnMoves.asInstanceOf[js.Array[String]].toList
           val initialFen = payload.initialFen.asInstanceOf[js.UndefOr[String]].toOption
+          val path = payload.path.asInstanceOf[js.UndefOr[String]].toOption
+
           (for {
             orig <- Pos.posAt(origS)
             dest <- Pos.posAt(destS)
@@ -113,17 +115,32 @@ object Main extends JSApp {
     }
 
     def pgnMove(variant: Variant, initFen: Option[String], pgnMoves: List[String], orig: Pos, dest: Pos, promotion: Option[PromotableRole]): Unit = {
-      val vr = Replay(pgnMoves, initFen, variant)
-      vr.flatMap(replay => move(replay.state, orig, dest, promotion)) match {
-        case Success(newSit) => {
-          self.postMessage(Message(
-            topic = "pgnMove",
-            payload = jsobj(
-              "situation" -> newSit
-            )
-          ))
+      if (pgnMoves.isEmpty) {
+        val game = Game(Some(variant), initFen)
+        move(game, orig, dest, promotion) match {
+          case Success(newSit) => {
+            self.postMessage(Message(
+              topic = "pgnMove",
+              payload = jsobj(
+                "situation" -> newSit
+              )
+            ))
+          }
+          case Failure(errors) => sendError(errors.head)
         }
-        case Failure(errors) => sendError(errors.head)
+      } else {
+        val vr = Replay(pgnMoves, initFen, variant)
+        vr.flatMap(replay => move(replay.state, orig, dest, promotion)) match {
+          case Success(newSit) => {
+            self.postMessage(Message(
+              topic = "pgnMove",
+              payload = jsobj(
+                "situation" -> newSit
+              )
+            ))
+          }
+          case Failure(errors) => sendError(errors.head)
+        }
       }
     }
 

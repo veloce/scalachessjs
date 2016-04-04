@@ -69,6 +69,18 @@
           }
         });
       }
+      function emptyPgnMove() {
+        worker.postMessage({
+          topic: 'pgnMove',
+          payload: {
+            initialFen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+            variant: 'standard',
+            pgnMoves: [],
+            orig: 'e2',
+            dest: 'e4'
+          }
+        });
+      }
     </script>
   </head>
   <body>

@@ -34,6 +34,21 @@ object Main extends JSApp {
             getDests(variant, fen)
           }
         }
+        case "threeFoldTest" => {
+          val pgnMoves = payload.pgnMoves.asInstanceOf[js.Array[String]].toList
+          val initialFen = payload.initialFen.asInstanceOf[js.UndefOr[String]].toOption
+          Replay(pgnMoves, initialFen, variant getOrElse Variant.default) match {
+            case Success(replay) => {
+              self.postMessage(Message(
+                topic = "threeFoldTest",
+                payload = jsobj(
+                  "threefoldRepetition" -> replay.state.board.history.threefoldRepetition
+                )
+              ))
+            }
+            case Failure(errors) => sendError(errors.head)
+          }
+        }
         case "fenMove" => {
           val promotion = payload.promotion.asInstanceOf[js.UndefOr[String]].toOption
           val origS = payload.orig.asInstanceOf[String]
@@ -56,7 +71,6 @@ object Main extends JSApp {
           val destS = payload.dest.asInstanceOf[String]
           val pgnMoves = payload.pgnMoves.asInstanceOf[js.Array[String]].toList
           val initialFen = payload.initialFen.asInstanceOf[js.UndefOr[String]].toOption
-          val path = payload.path.asInstanceOf[js.UndefOr[String]].toOption
 
           (for {
             orig <- Pos.posAt(origS)

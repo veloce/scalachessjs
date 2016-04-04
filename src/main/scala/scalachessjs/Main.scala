@@ -7,7 +7,7 @@ import js.Dynamic.{ global => g, newInstance => jsnew, literal => jsobj }
 import js.JSConverters._
 import js.annotation._
 
-import chess.{ Valid, Success, Failure, Board, Game, Color, Pos, Role, PromotableRole, Replay }
+import chess.{ Valid, Success, Failure, Board, Game, Color, Pos, Role, PromotableRole, Replay, Status }
 import chess.variant.Variant
 
 object Main extends JSApp {
@@ -67,6 +67,21 @@ object Main extends JSApp {
               pgnMove(v, initialFen, pgnMoves, orig, dest, Role.promotable(promotion))
             case None =>
               sendError(s"step topic params: $origS, $destS, $variant are not valid")
+          }
+        }
+        case "pgnRead" => {
+          val pgn = payload.pgn.asInstanceOf[String]
+          g.console.log(pgn)
+          chess.format.pgn.Reader.full(pgn) match {
+            case Success(replay) => {
+              self.postMessage(Message(
+                topic = "pgnRead",
+                payload = jsobj(
+                  "situation" -> gameToSituationInfo(replay.state)
+                )
+              ))
+            }
+            case Failure(errors) => sendError(errors.head)
           }
         }
       }
@@ -165,19 +180,20 @@ object Main extends JSApp {
   private def gameToSituationInfo(game: Game, promotionRole: Option[PromotableRole] = None): js.Object = {
     val movable = !game.situation.end
     val emptyDests: js.Dictionary[js.Array[String]] = js.Dictionary()
+    val statusOpt =
+      if (game.situation.threefoldRepetition)
+        Some(Status.Draw)
+      else
+        game.situation.status
+
     new SituationInfo {
       val variant = game.board.variant.key
       val fen = chess.format.Forsyth >> game
       val player = game.player.name
       val dests = if (movable) possibleDests(game) else emptyDests
-      val playable = game.situation.playable(true)
-      val status = game.situation.status.map { s =>
-        jsobj(
-          "id" -> s.id,
-          "name" -> s.name
-        )
-      }.orUndefined
+      val playable = !game.situation.threefoldRepetition && game.situation.playable(true)
       val winner = game.situation.winner.map(_.name).orUndefined
+      val threefoldRepetition = game.situation.threefoldRepetition
       val check = game.situation.check
       val pgnMoves = game.pgnMoves.toJSArray
       val lastMove = game.board.history.lastMove.map { lm =>
@@ -188,6 +204,12 @@ object Main extends JSApp {
         )
       }.orUndefined
       val promotion = promotionRole.map(_.forsyth).map(_.toString).orUndefined
+      val status = statusOpt.map { s =>
+        jsobj(
+          "id" -> s.id,
+          "name" -> s.name
+          )
+      }.orUndefined
       val ply = game.turns
     }
   }
@@ -226,6 +248,7 @@ trait SituationInfo extends js.Object {
   val dests: js.Dictionary[js.Array[String]]
   val playable: Boolean
   val status: js.UndefOr[js.Object]
+  val threefoldRepetition: Boolean
   val winner: js.UndefOr[String]
   val check: Boolean
   val pgnMoves: js.Array[String]

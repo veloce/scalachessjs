@@ -195,6 +195,10 @@ object Main extends JSApp {
       val winner = game.situation.winner.map(_.name).orUndefined
       val threefoldRepetition = game.situation.threefoldRepetition
       val check = game.situation.check
+      val checkCount = jsobj(
+        "white" -> game.board.history.checkCount.white,
+        "black" -> game.board.history.checkCount.black
+      )
       val pgnMoves = game.pgnMoves.toJSArray
       val lastMove = game.board.history.lastMove.map { lm =>
         jsobj(
@@ -251,6 +255,7 @@ trait SituationInfo extends js.Object {
   val threefoldRepetition: Boolean
   val winner: js.UndefOr[String]
   val check: Boolean
+  val checkCount: js.Object
   val pgnMoves: js.Array[String]
   val lastMove: js.UndefOr[js.Object]
   val promotion: js.UndefOr[String]

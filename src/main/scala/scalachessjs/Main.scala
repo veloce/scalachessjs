@@ -115,6 +115,7 @@ object Main extends JSApp {
     }
 
     def pgnMove(variant: Variant, initFen: Option[String], pgnMoves: List[String], orig: Pos, dest: Pos, promotion: Option[PromotableRole]): Unit = {
+      val initialFen = initFen getOrElse chess.format.Forsyth.initial
       if (pgnMoves.isEmpty) {
         val game = Game(Some(variant), initFen)
         move(game, orig, dest, promotion) match {
@@ -122,6 +123,7 @@ object Main extends JSApp {
             self.postMessage(Message(
               topic = "pgnMove",
               payload = jsobj(
+                "initialFen" -> initialFen,
                 "situation" -> newSit
               )
             ))
@@ -135,6 +137,7 @@ object Main extends JSApp {
             self.postMessage(Message(
               topic = "pgnMove",
               payload = jsobj(
+                "initialFen" -> initialFen,
                 "situation" -> newSit
               )
             ))
@@ -161,11 +164,12 @@ object Main extends JSApp {
 
   private def gameToSituationInfo(game: Game, promotionRole: Option[PromotableRole] = None): js.Object = {
     val movable = !game.situation.end
+    val emptyDests: js.Dictionary[js.Array[String]] = js.Dictionary()
     new SituationInfo {
       val variant = game.board.variant.key
       val fen = chess.format.Forsyth >> game
       val player = game.player.name
-      val dests = (if (movable) Some(possibleDests(game)) else None).orUndefined
+      val dests = if (movable) possibleDests(game) else emptyDests
       val playable = game.situation.playable(true)
       val status = game.situation.status.map { s =>
         jsobj(
@@ -219,7 +223,7 @@ trait SituationInfo extends js.Object {
   val variant: String
   val fen: String
   val player: String
-  val dests: js.UndefOr[js.Dictionary[js.Array[String]]]
+  val dests: js.Dictionary[js.Array[String]]
   val playable: Boolean
   val status: js.UndefOr[js.Object]
   val winner: js.UndefOr[String]

@@ -103,12 +103,6 @@ object Main extends JSApp {
           self.postMessage(Message(
             topic = "fenMove",
             payload = jsobj(
-              "variant" -> new VariantInfo {
-                val key = game.board.variant.key
-                val name = game.board.variant.name
-                val shortName = game.board.variant.shortName
-                val title = game.board.variant.title
-              },
               "situation" -> newSit,
               "path" -> path.orUndefined
             )
@@ -125,12 +119,6 @@ object Main extends JSApp {
           self.postMessage(Message(
             topic = "pgnMove",
             payload = jsobj(
-              "variant" -> new VariantInfo {
-                val key = variant.key
-                val name = variant.name
-                val shortName = variant.shortName
-                val title = variant.title
-              },
               "situation" -> newSit
             )
           ))
@@ -157,6 +145,7 @@ object Main extends JSApp {
   private def gameToSituationInfo(game: Game, promotionRole: Option[PromotableRole] = None): js.Object = {
     val movable = !game.situation.end
     new SituationInfo {
+      val variant = game.board.variant.key
       val fen = chess.format.Forsyth >> game
       val player = game.player.name
       val dests = (if (movable) Some(possibleDests(game)) else None).orUndefined
@@ -210,6 +199,7 @@ trait VariantInfo extends js.Object {
 
 @ScalaJSDefined
 trait SituationInfo extends js.Object {
+  val variant: String
   val fen: String
   val player: String
   val dests: js.UndefOr[js.Dictionary[js.Array[String]]]

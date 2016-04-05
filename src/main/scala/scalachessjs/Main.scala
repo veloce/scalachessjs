@@ -28,10 +28,11 @@ object Main extends JSApp {
           init(variant, fen)
         }
         case "dests" => {
+          val path = payload.path.asInstanceOf[js.UndefOr[String]].toOption
           fen.fold {
             sendError("fen field is required for dests topic")
           } { fen =>
-            getDests(variant, fen)
+            getDests(variant, fen, path)
           }
         }
         case "threefoldTest" => {
@@ -120,12 +121,13 @@ object Main extends JSApp {
       ))
     }
 
-    def getDests(variant: Option[Variant], fen: String): Unit = {
+    def getDests(variant: Option[Variant], fen: String, path: Option[String]): Unit = {
       val game = Game(variant, Some(fen))
       self.postMessage(Message(
         topic = "dests",
         payload = jsobj(
-          "dests" -> possibleDests(game)
+          "dests" -> possibleDests(game),
+          "path" -> path.orUndefined
         )
       ))
     }

@@ -73,13 +73,28 @@ object Main extends JSApp {
         }
         case "pgnRead" => {
           val pgn = payload.pgn.asInstanceOf[String]
-          g.console.log(pgn)
           chess.format.pgn.Reader.full(pgn) match {
             case Success(replay) => {
               self.postMessage(Message(
                 topic = "pgnRead",
                 payload = jsobj(
                   "situation" -> gameToSituationInfo(replay.state)
+                )
+              ))
+            }
+            case Failure(errors) => sendError(errors.head)
+          }
+        }
+        case "pgnDump" => {
+          val pgnMoves = payload.pgnMoves.asInstanceOf[js.Array[String]].toList
+          val initialFen = payload.initialFen.asInstanceOf[js.UndefOr[String]].toOption
+          Replay(pgnMoves, initialFen, variant getOrElse Variant.default) match {
+            case Success(replay) => {
+              val pgn = PgnDump(replay.state, initialFen, replay.setup.turns)
+              self.postMessage(Message(
+                topic = "pgnDump",
+                payload = jsobj(
+                  "pgn" -> pgn.toString
                 )
               ))
             }

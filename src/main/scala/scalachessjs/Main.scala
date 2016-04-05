@@ -42,7 +42,11 @@ object Main extends JSApp {
               self.postMessage(Message(
                 topic = "threefoldTest",
                 payload = jsobj(
-                  "threefoldRepetition" -> replay.state.board.history.threefoldRepetition
+                  "threefoldRepetition" -> replay.state.board.history.threefoldRepetition,
+                  "status" -> jsobj(
+                    "id" -> Status.Draw.id,
+                    "name" -> Status.Draw.name
+                  )
                 )
               ))
             }

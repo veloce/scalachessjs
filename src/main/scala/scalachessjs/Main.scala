@@ -89,9 +89,12 @@ object Main extends JSApp {
         case "pgnDump" => {
           val pgnMoves = payload.pgnMoves.asInstanceOf[js.Array[String]].toList
           val initialFen = payload.initialFen.asInstanceOf[js.UndefOr[String]].toOption
+          val white = payload.white.asInstanceOf[js.UndefOr[String]].toOption
+          val black = payload.black.asInstanceOf[js.UndefOr[String]].toOption
+          val date = payload.date.asInstanceOf[js.UndefOr[String]].toOption
           Replay(pgnMoves, initialFen, variant getOrElse Variant.default) match {
             case Success(replay) => {
-              val pgn = PgnDump(replay.state, initialFen, replay.setup.turns)
+              val pgn = PgnDump(replay.state, initialFen, replay.setup.turns, white, black, date)
               self.postMessage(Message(
                 topic = "pgnDump",
                 payload = jsobj(

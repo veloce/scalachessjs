@@ -10,23 +10,30 @@ import js.Dynamic.{ global => g, newInstance => jsnew }
 
 object PgnDump {
 
-  def apply(game: Game, initialFen: Option[String], startedAtTurn: Int): Pgn = {
-    val ts = tags(game, initialFen)
+  def apply(
+    game: Game,
+    initialFen: Option[String],
+    startedAtTurn: Int,
+    white: Option[String] = None,
+    black: Option[String] = None,
+    date: Option[String] = None): Pgn = {
+    val ts = tags(game, initialFen, white, black)
     Pgn(ts, turns(game.pgnMoves, startedAtTurn))
   }
 
-  private val customStartPosition: Set[chess.variant.Variant] =
-    Set(chess.variant.Chess960, chess.variant.FromPosition, chess.variant.Horde, chess.variant.RacingKings)
-
   private def tags(
     game: Game,
-    initialFen: Option[String]): List[Tag] = {
+    initialFen: Option[String],
+    white: Option[String] = None,
+    black: Option[String] = None,
+    date: Option[String] = None): List[Tag] = {
       val d = jsnew(g.Date)()
       List(
         Tag(_.Event, "Casual Game"),
-        Tag(_.Date, d.toLocaleString()),
-        Tag(_.White, "Anonymous"),
-        Tag(_.Black, "Anonymous"),
+        Tag(_.Site, "http://lichess.org"),
+        Tag(_.Date, date getOrElse d.toLocaleDateString()),
+        Tag(_.White, white getOrElse "Anonymous"),
+        Tag(_.Black, black getOrElse "Anonymous"),
         Tag(_.Result, result(game)),
         Tag("PlyCount", game.turns),
         Tag(_.FEN, initialFen getOrElse "?"),

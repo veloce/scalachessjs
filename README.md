@@ -5,12 +5,12 @@ to JavaScript, thanks to [Scala.js](https://www.scala-js.org/).
 
 ## Features
 
-* Fully asynchronous: runs in a web worker, it doesn't block your UI while you're
+* Fully asynchronous: runs in a web worker, it does not block your UI while you're
   computing chess logic.
-* Completely stateless: you send the complete game position for each request,
+* Completely stateless: you send the complete game position in each request,
 either with FEN or PGN
-* Built from extensively tested code: the scala library is by itself well tested
-  and it also powers all the chess logic of the thousands of games being played
+* Built from extensively tested code: the scalachess library is by itself well tested
+  and powers all the chess logic of the thousands of games being played
   every day on [lichess.org](http://lichess.org).
 * Multi variants support: Chess 960, King Of The Hill, Three-check, Antichess,
 Atomic chess, Horde, Racing Kings, Crazyhouse!

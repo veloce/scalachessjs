@@ -166,6 +166,7 @@ object Main extends JSApp {
       val fen = chess.format.Forsyth >> game
       val player = game.player.name
       val dests = if (movable) possibleDests(game) else emptyDests
+      val end = game.situation.end
       val playable = game.situation.playable(true)
       val winner = game.situation.winner.map(_.name).orUndefined
       val check = game.situation.check
@@ -224,6 +225,7 @@ trait SituationInfo extends js.Object {
   val fen: String
   val player: String
   val dests: js.Dictionary[js.Array[String]]
+  val end: Boolean
   val playable: Boolean
   val status: js.UndefOr[js.Object]
   val winner: js.UndefOr[String]

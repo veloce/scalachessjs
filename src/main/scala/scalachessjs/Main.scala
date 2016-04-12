@@ -59,7 +59,9 @@ object Main extends JSApp {
           val origS = payload.orig.asInstanceOf[String]
           val destS = payload.dest.asInstanceOf[String]
           val pgnMovesOpt = payload.pgnMoves.asInstanceOf[js.UndefOr[js.Array[String]]].toOption
+          val uciMovesOpt = payload.uciMoves.asInstanceOf[js.UndefOr[js.Array[String]]].toOption
           val pgnMoves = pgnMovesOpt.map(_.toList).getOrElse(List.empty[String])
+          val uciMoves = uciMovesOpt.map(_.toList).getOrElse(List.empty[String])
           val path = payload.path.asInstanceOf[js.UndefOr[String]].toOption
           (for {
             orig <- Pos.posAt(origS)
@@ -67,7 +69,7 @@ object Main extends JSApp {
             fen <- fen
           } yield (orig, dest, fen)) match {
             case Some((orig, dest, fen)) =>
-              move(variant, fen, pgnMoves, orig, dest, Role.promotable(promotion), path)
+              move(variant, fen, pgnMoves, uciMoves, orig, dest, Role.promotable(promotion), path)
             case None =>
               sendError(s"step topic params: $origS, $destS, $fen are not valid")
           }
@@ -76,10 +78,13 @@ object Main extends JSApp {
           val pgn = payload.pgn.asInstanceOf[String]
           chess.format.pgn.Reader.full(pgn) match {
             case Success(replay) => {
+              val ucimoves = replay.moves.reverse.init.map { moveOrDrop =>
+                moveOrDrop.fold(chess.format.Uci.apply, chess.format.Uci.apply)
+              }.map(_.uci)
               self.postMessage(Message(
                 topic = "pgnRead",
                 payload = jsobj(
-                  "situation" -> gameToSituationInfo(replay.state)
+                  "situation" -> gameToSituationInfo(replay.state, ucimoves)
                 )
               ))
             }
@@ -135,13 +140,13 @@ object Main extends JSApp {
       ))
     }
 
-    def move(variant: Option[Variant], fen: String, pgnMoves: List[String], orig: Pos, dest: Pos, promotion: Option[PromotableRole], path: Option[String]): Unit = {
+    def move(variant: Option[Variant], fen: String, pgnMoves: List[String], uciMoves: List[String], orig: Pos, dest: Pos, promotion: Option[PromotableRole], path: Option[String]): Unit = {
       Game(variant, Some(fen))(orig, dest, promotion) match {
         case Success((newGame, move)) => {
           self.postMessage(Message(
             topic = "move",
             payload = jsobj(
-              "situation" -> gameToSituationInfo(newGame.withPgnMoves(pgnMoves ++ newGame.pgnMoves), promotion),
+              "situation" -> gameToSituationInfo(newGame.withPgnMoves(pgnMoves ++ newGame.pgnMoves), uciMoves, promotion),
               "path" -> path.orUndefined
             )
           ))
@@ -157,9 +162,12 @@ object Main extends JSApp {
       ))
   }
 
-  private def gameToSituationInfo(game: Game, promotionRole: Option[PromotableRole] = None): js.Object = {
+  private def gameToSituationInfo(game: Game, curUciMoves: List[String] = List.empty[String], promotionRole: Option[PromotableRole] = None): js.Object = {
     val movable = !game.situation.end
     val emptyDests: js.Dictionary[js.Array[String]] = js.Dictionary()
+    val mergedUciMoves = game.board.history.lastMove.fold(List.empty[String]) { lm =>
+      curUciMoves :+ lm.uci
+    }
 
     new SituationInfo {
       val variant = game.board.variant.key
@@ -175,13 +183,7 @@ object Main extends JSApp {
         "black" -> game.board.history.checkCount.black
       )
       val pgnMoves = game.pgnMoves.toJSArray
-      val lastMove = game.board.history.lastMove.map { lm =>
-        jsobj(
-          "from" -> lm.origDest._1.toString,
-          "to" -> lm.origDest._2.toString,
-          "uci" -> lm.uci
-        )
-      }.orUndefined
+      val uciMoves = mergedUciMoves.toJSArray
       val promotion = promotionRole.map(_.forsyth).map(_.toString).orUndefined
       val status = game.situation.status.map { s =>
         jsobj(
@@ -232,7 +234,7 @@ trait SituationInfo extends js.Object {
   val check: Boolean
   val checkCount: js.Object
   val pgnMoves: js.Array[String]
-  val lastMove: js.UndefOr[js.Object]
+  val uciMoves: js.Array[String]
   val promotion: js.UndefOr[String]
   val ply: Int
 }

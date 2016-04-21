@@ -123,8 +123,10 @@ worker.postMessage({
     fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2 +0+0',
     variant: 'threeCheck',
     pgnMoves: ['e4', 'e5'],
+    uciMoves: ['e2e4', 'e7e5'],
     orig: 'd2',
-    dest: 'd4'
+    dest: 'd4',
+    path: '0'
   }
 });
 ```
@@ -132,35 +134,29 @@ worker.postMessage({
 Response:
 ```js
 {
-    "payload": {
-        "path": undefined,
-        "situation": {
-            "check": false,
-            "checkCount": {
-                "black": 0,
-                "white": 0
-            },
-            "dests": {
-                "a7": [ "a6", "a5" ], "b7": [ "b6", "b5" ], "b8": [ "a6", "c6" ], "c7": [ "c6", "c5" ], "d7": [ "d6", "d5" ], "d8": [ "e7", "f6", "g5", "h4" ], "e5": [ "d4" ], "e8": [ "e7" ], "f7": [ "f6", "f5" ], "f8": [ "e7", "d6", "c5", "b4", "a3" ], "g7": [ "g6", "g5" ], "g8": [ "e7", "f6", "h6" ], "h7": [ "h6", "h5" ]
-            },
-            "fen": "rnbqkbnr/pppp1ppp/8/4p3/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2 +0+0",
-            "lastMove": {
-                "from": "d2",
-                "to": "d4",
-                "uci": "d2d4"
-            },
-            "pgnMoves": [
-                "e4",
-                "e5",
-                "d4"
-            ],
-            "playable": true,
-            "player": "black",
-            "ply": 3,
-            "variant": "threeCheck"
-        }
-    },
-    "topic": "move"
+    "path": "0",
+    "situation": {
+        "check": false,
+        "checkCount": {
+            "black": 0,
+            "white": 0
+        },
+        "dests": {
+            "a7": [ "a6", "a5" ], "b7": [ "b6", "b5" ], "b8": [ "a6", "c6" ], "c7": [ "c6", "c5" ], "d7": [ "d6", "d5" ], "d8": [ "e7", "f6", "g5", "h4" ], "e5": [ "d4" ], "e8": [ "e7" ], "f7": [ "f6", "f5" ], "f8": [ "e7", "d6", "c5", "b4", "a3" ], "g7": [ "g6", "g5" ], "g8": [ "e7", "f6", "h6" ], "h7": [ "h6", "h5" ]
+        },
+        "end": false,
+        "fen": "rnbqkbnr/pppp1ppp/8/4p3/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2 +0+0",
+        "pgnMoves": [
+            "e4", "e5", "d4"
+        ],
+        "playable": true,
+        "player": "black",
+        "ply": 3,
+        "uciMoves": [
+            "e2e4", "e7e5", "d2d4"
+        ],
+        "variant": "threeCheck"
+    }
 }
 ```
 

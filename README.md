@@ -42,7 +42,7 @@ The library will always reply with the same `topic` field of the request.
 * `threefoldTest` test if current situation falls under the threefold repetition
   rule. Warning: it can be slow since it has to replay the whole game from the
   PGN moves
-* `pgnRead` parse a PGN string a returns a situation object
+* `pgnRead` parse a PGN string a returns the whole game history
 * `pgnDump` takes an initial FEN, a list of moves and returns a formatted PGN
   string
 

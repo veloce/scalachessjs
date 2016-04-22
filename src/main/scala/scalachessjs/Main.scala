@@ -79,12 +79,19 @@ object Main extends JSApp {
           (for {
             replay <- chess.format.pgn.Reader.full(pgn)
             fen = chess.format.Forsyth >> replay.setup
-            games <- replayGames(replay.moves, Some(fen), replay.setup.board.variant)
-          } yield games) match {
-            case Success(listOfGames) => {
+            games <- replayGames(replay.chronoMoves, Some(fen), replay.setup.board.variant)
+          } yield (replay, games)) match {
+            case Success((replay, listOfGames)) => {
               self.postMessage(Message(
                 topic = "pgnRead",
                 payload = jsobj(
+                  "variant" -> new VariantInfo {
+                    val key = replay.setup.board.variant.key
+                    val name = replay.setup.board.variant.name
+                    val shortName = replay.setup.board.variant.shortName
+                    val title = replay.setup.board.variant.title
+                  },
+                  "setup" -> gameToSituationInfo(replay.setup),
                   "replay" -> listOfGames.map(gameToSituationInfo(_)).toJSArray
                 )
               ))

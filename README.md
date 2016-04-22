@@ -229,15 +229,19 @@ Response
                 "white": 0
             },
             "dests": {
-                "a6": [ "a5" ], "b7": [ "b6", "b5" ], "c6": [ "b8", "d8", "a7", "a5", "e5", "b4", "d4" ], "d6": [ "d5" ], "e2": [ "e3", "e4", "e1", "d2", "c2", "f2", "g2" ], "e7": [ "e6", "e5" ], "f7": [ "f6", "f5" ], "g5": [ "g4" ], "g7": [ "g8", "g6", "h7", "f8", "h8", "f6", "h6" ]
+                "a7": [ "a6", "a5" ], "b7": [ "b6", "b5" ], "b8": [ "a6", "c6" ], "c7": [ "c6", "c5" ], "d7": [ "d6", "d5" ], "e7": [ "e6", "e5" ], "f7": [ "f6", "f5" ], "g7": [ "g6", "g5" ], "g8": [ "f6", "h6" ], "h7": [ "h6", "h5" ]
             },
             "end": false,
-            "fen": "8/1p2ppk1/p1np4/6p1/2R1P3/1P4KP/P1R1r1P1/8 b - - 7 1",
-            "pgnMoves": [ "Rc2" ],
+            "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+            "pgnMoves": [
+                "e4"
+            ],
             "playable": true,
             "player": "black",
             "ply": 1,
-            "uciMoves": [ "c1c2" ],
+            "uciMoves": [
+                "e2e4"
+            ],
             "variant": "standard"
         },
         {
@@ -247,15 +251,20 @@ Response
                 "white": 0
             },
             "dests": {
-                "a2": [ "a3", "a4" ], "b3": [ "b4" ], "c1": [ "c2", "c3", "b1", "a1", "d1", "e1", "f1", "g1", "h1" ], "c4": [ "c5", "c6", "c3", "c2", "b4", "a4", "d4" ], "e4": [ "e5" ], "g3": [ "g4", "f3", "h2" ], "h3": [ "h4" ]
+                "a2": [ "a3", "a4" ], "b1": [ "a3", "c3" ], "b2": [ "b3", "b4" ], "c2": [ "c3", "c4" ], "d1": [ "e2", "f3", "g4", "h5" ], "d2": [ "d3", "d4" ], "e1": [ "e2" ], "e4": [ "e5" ], "f1": [ "e2", "d3", "c4", "b5", "a6" ], "f2": [ "f3", "f4" ], "g1": [ "f3", "h3", "e2" ], "g2": [ "g3", "g4" ], "h2": [ "h3", "h4" ]
             },
             "end": false,
-            "fen": "8/1p2ppk1/p1np4/6p1/2R1P3/1P4KP/P3r1P1/2R5 w - - 6 2",
-            "pgnMoves": [ "Rc2", "Re2" ],
+            "fen": "rnbqkbnr/ppp1pppp/3p4/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+            "pgnMoves": [
+                "e4",
+                "d6"
+            ],
             "playable": true,
             "player": "white",
             "ply": 2,
-            "uciMoves": [ "e1e2" ],
+            "uciMoves": [
+                "d7d6"
+            ],
             "variant": "standard"
         },
         {
@@ -265,19 +274,48 @@ Response
                 "white": 0
             },
             "dests": {
-                "a6": [ "a5" ], "b7": [ "b6", "b5" ], "c6": [ "b8", "d8", "a7", "a5", "e5", "b4", "d4" ], "d6": [ "d5" ], "e1": [ "e2", "e3", "e4", "d1", "c1", "f1", "g1", "h1" ], "e7": [ "e6", "e5" ], "f7": [ "f6", "f5" ], "g5": [ "g4" ], "g7": [ "g8", "g6", "h7", "f8", "h8", "f6", "h6" ]
+                "a7": [ "a6", "a5" ], "b7": [ "b6", "b5" ], "b8": [ "d7", "a6", "c6" ], "c7": [ "c6", "c5" ], "c8": [ "d7", "e6", "f5", "g4", "h3" ], "d6": [ "d5" ], "d8": [ "d7" ], "e7": [ "e6", "e5" ], "e8": [ "d7" ], "f7": [ "f6", "f5" ], "g7": [ "g6", "g5" ], "g8": [ "f6", "h6" ], "h7": [ "h6", "h5" ]
             },
             "end": false,
-            "fen": "8/1p2ppk1/p1np4/6p1/2R1P3/1P4KP/P5P1/2R1r3 b - - 5 2",
-            "pgnMoves": [ "Rc2", "Re2", "Rc1" ],
+            "fen": "rnbqkbnr/ppp1pppp/3p4/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2",
+            "pgnMoves": [
+                "e4",
+                "d6",
+                "d4"
+            ],
             "playable": true,
             "player": "black",
             "ply": 3,
-            "uciMoves": [ "c2c1" ],
+            "uciMoves": [
+                "d2d4"
+            ],
             "variant": "standard"
         },
-        ... // up till ply 89
-    ]
+        ... // till up to ply 89
+    ],
+    "setup": {
+        "check": false,
+        "checkCount": {
+            "black": 0,
+            "white": 0
+        },
+        "dests": {
+            "a2": [ "a3", "a4" ], "b1": [ "a3", "c3" ], "b2": [ "b3", "b4" ], "c2": [ "c3", "c4" ], "d2": [ "d3", "d4" ], "e2": [ "e3", "e4" ], "f2": [ "f3", "f4" ], "g1": [ "f3", "h3" ], "g2": [ "g3", "g4" ], "h2": [ "h3", "h4" ]
+        },
+        "end": false,
+        "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        "pgnMoves": [],
+        "playable": true,
+        "player": "white",
+        "ply": 0,
+        "uciMoves": [],
+        "variant": "standard"
+    },
+    "variant": {
+        "key": "standard",
+        "name": "Standard",
+        "shortName": "Std",
+        "title": "Standard rules of chess (FIDE)"
+    }
 }
-
 ```

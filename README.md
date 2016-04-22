@@ -276,7 +276,7 @@ Response
             "uciMoves": [ "c2c1" ],
             "variant": "standard"
         },
-        ... // 'till ply 89
+        ... // up till ply 89
     ]
 }
 

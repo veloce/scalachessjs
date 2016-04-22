@@ -23,6 +23,7 @@
             console.info('threefoldTest', e.data.payload);
             break;
           case 'pgnRead':
+            console.timeEnd('pgnRead');
             console.info('pgnRead', e.data.payload);
             break;
           case 'pgnDump':
@@ -99,6 +100,7 @@
   '36. Re3 a6 37. Rc3 Re1 38. Rc4 Rf1 39. Rdc2 Ra1 40. Rf2 Re1\n' +
   '41. Rfc2 g5 42. Rc1 Re2 43. R1c2 Re1 44. Rc1 Re2 45. R1c2\n' +
   '1/2-1/2';
+        console.time('pgnRead');
         worker.postMessage({
           topic: 'pgnRead',
           payload: {

@@ -7,7 +7,7 @@ import js.Dynamic.{ global => g, newInstance => jsnew, literal => jsobj }
 import js.JSConverters._
 import js.annotation._
 
-import chess.{ Valid, Success, Failure, Board, Game, Color, Pos, Role, PromotableRole, Replay, Status }
+import chess.{ Valid, Success, Failure, Board, Game, Color, Pos, Role, PromotableRole, Replay, Status, MoveOrDrop }
 import chess.variant.Variant
 
 object Main extends JSApp {
@@ -76,15 +76,16 @@ object Main extends JSApp {
         }
         case "pgnRead" => {
           val pgn = payload.pgn.asInstanceOf[String]
-          chess.format.pgn.Reader.full(pgn) match {
-            case Success(replay) => {
-              val ucimoves = replay.moves.reverse.init.map { moveOrDrop =>
-                moveOrDrop.fold(chess.format.Uci.apply, chess.format.Uci.apply)
-              }.map(_.uci)
+          (for {
+            replay <- chess.format.pgn.Reader.full(pgn)
+            fen = chess.format.Forsyth >> replay.setup
+            games <- replayGames(replay.moves, Some(fen), replay.setup.board.variant)
+          } yield games) match {
+            case Success(listOfGames) => {
               self.postMessage(Message(
                 topic = "pgnRead",
                 payload = jsobj(
-                  "situation" -> gameToSituationInfo(replay.state, ucimoves)
+                  "replay" -> listOfGames.map(gameToSituationInfo(_)).toJSArray
                 )
               ))
             }
@@ -200,7 +201,26 @@ object Main extends JSApp {
       case (pos, dests) => (pos.toString -> dests.map(_.toString).toJSArray)
     }.toJSDictionary
   }
+
+  private def replayGames(
+    moves: List[MoveOrDrop],
+    initialFen: Option[String],
+    variant: chess.variant.Variant): Valid[List[Game]] = {
+      val game = Game(Some(variant), initialFen)
+      recursiveGames(game, moves) map { game :: _ }
+  }
+
+  private def recursiveGames(game: Game, moves: List[MoveOrDrop]): Valid[List[Game]] =
+    moves match {
+      case Nil => Success(Nil)
+      case moveOrDrop :: rest => {
+        val newGame = moveOrDrop.fold(game.apply, game.applyDrop)
+        recursiveGames(newGame, rest) map { newGame :: _ }
+      }
+    }
+
 }
+
 
 @js.native
 trait Message extends js.Object {

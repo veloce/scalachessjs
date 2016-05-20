@@ -15,6 +15,13 @@ either with FEN or PGN
 * Multi variants support: Chess 960, King Of The Hill, Three-check, Antichess,
 Atomic chess, Horde, Racing Kings, Crazyhouse!
 
+## Build
+
+    $ git submodule update --init
+    $ ./build.sh
+
+Generated file will be in `build` dir.
+
 ## API
 
 ### Message Format

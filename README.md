@@ -1,7 +1,12 @@
 # scalachessjs
 
-Port of the awesome [scalachess](https://github.com/ornicar/scalachess) library
-to JavaScript, thanks to [Scala.js](https://www.scala-js.org/).
+scalachessjs is a chess library that runs in a webworker, with multi-variants support.
+
+It is based on the awesome [scalachess](https://github.com/ornicar/scalachess) library
+compiled to JavaScript, thanks to [Scala.js](https://www.scala-js.org/).
+
+It is currently used in production in the [lichess.org](http://lichess.org) mobile
+application. So you can see a real world usage [on the mobile app repo](https://github.com/veloce/lichobile).
 
 ## Features
 

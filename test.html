@@ -31,7 +31,7 @@
             console.info('pgnDump', e.data.payload.pgn);
             break;
           case 'error':
-            throw new Error(e.data.payload);
+            console.error(e.data.payload);
             break;
         }
       });

@@ -7,8 +7,9 @@ import js.Dynamic.{ global => g, newInstance => jsnew, literal => jsobj }
 import js.JSConverters._
 import js.annotation._
 
-import chess.{ Valid, Success, Failure, Board, Game, Color, Pos, Role, PromotableRole, Replay, Status, MoveOrDrop }
+import chess.{ Valid, Success, Failure, Board, Game, Color, Pos, Role, PromotableRole, Replay, Status, Move, MoveOrDrop }
 import chess.variant.Variant
+import chess.format.UciDump
 
 object Main extends JSApp {
   def main(): Unit = {
@@ -163,10 +164,13 @@ object Main extends JSApp {
     def move(variant: Option[Variant], fen: String, pgnMoves: List[String], uciMoves: List[String], orig: Pos, dest: Pos, promotion: Option[PromotableRole], path: Option[String]): Unit = {
       Game(variant, Some(fen))(orig, dest, promotion) match {
         case Success((newGame, move)) => {
+          val ucilm = UciDump.move(newGame.board.variant)(Left(move))
+          val mergedUciMoves = uciMoves :+ ucilm
+
           self.postMessage(Message(
             topic = "move",
             payload = jsobj(
-              "situation" -> gameToSituationInfo(newGame.withPgnMoves(pgnMoves ++ newGame.pgnMoves), uciMoves, promotion),
+              "situation" -> gameToSituationInfo(newGame.withPgnMoves(pgnMoves ++ newGame.pgnMoves), mergedUciMoves, promotion),
               "path" -> path.orUndefined
             )
           ))
@@ -185,12 +189,14 @@ object Main extends JSApp {
       ))
   }
 
-  private def gameToSituationInfo(game: Game, curUciMoves: List[String] = List.empty[String], promotionRole: Option[PromotableRole] = None): js.Object = {
+  private def gameToSituationInfo(
+    game: Game,
+    mergedUciMoves: List[String] = List.empty[String],
+    promotionRole: Option[PromotableRole] = None
+  ): js.Object = {
+
     val movable = !game.situation.end
     val emptyDests: js.Dictionary[js.Array[String]] = js.Dictionary()
-    val mergedUciMoves = game.board.history.lastMove.fold(List.empty[String]) { lm =>
-      curUciMoves :+ lm.uci
-    }
 
     new SituationInfo {
       val variant = game.board.variant.key

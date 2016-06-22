@@ -33,7 +33,7 @@ object Main extends JSApp {
           case "dests" => {
             val path = payload.path.asInstanceOf[js.UndefOr[String]].toOption
             fen.fold {
-              sendError("fen field is required for dests topic")
+              sendError(data.topic, "fen field is required for dests topic")
             } { fen =>
               getDests(variant, fen, path)
             }
@@ -54,7 +54,7 @@ object Main extends JSApp {
                   )
                 ))
               }
-              case Failure(errors) => sendError(errors.head)
+              case Failure(errors) => sendError(data.topic, errors.head)
             }
           }
           case "move" => {
@@ -74,7 +74,7 @@ object Main extends JSApp {
               case Some((orig, dest, fen)) =>
                 move(variant, fen, pgnMoves, uciMoves, orig, dest, Role.promotable(promotion), path)
               case None =>
-                sendError(s"step topic params: $origS, $destS, $fen are not valid")
+                sendError(data.topic, s"step topic params: $origS, $destS, $fen are not valid")
             }
           }
           case "pgnRead" => {
@@ -99,7 +99,7 @@ object Main extends JSApp {
                   )
                 ))
               }
-              case Failure(errors) => sendError(errors.head)
+              case Failure(errors) => sendError(data.topic, errors.head)
             }
           }
           case "pgnDump" => {
@@ -118,15 +118,18 @@ object Main extends JSApp {
                   )
                 ))
               }
-              case Failure(errors) => sendError(errors.head)
+              case Failure(errors) => sendError(data.topic, errors.head)
             }
           }
           case _ => {
-            sendError("Invalid command.")
+            sendError(data.topic, "Invalid command.")
           }
         }
       } catch {
-        case e: Exception => sendError("Exception caught in scalachessjs: " + e)
+        case ex: Exception => {
+          val data = e.data.asInstanceOf[Message]
+          sendError(data.topic, "Exception caught in scalachessjs: " + ex)
+        }
       }
     })
 
@@ -168,14 +171,17 @@ object Main extends JSApp {
             )
           ))
         }
-        case Failure(errors) => sendError(errors.head)
+        case Failure(errors) => sendError("move", errors.head)
       }
     }
 
-    def sendError(error: String): Unit =
+    def sendError(callerTopic: String, error: String): Unit =
       self.postMessage(Message(
         topic = "error",
-        payload = error
+        payload = jsobj(
+          "callerTopic" -> callerTopic,
+          "error" -> error
+        )
       ))
   }
 

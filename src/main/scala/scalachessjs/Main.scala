@@ -9,6 +9,7 @@ import js.annotation._
 
 import chess.{ Valid, Success, Failure, Board, Game, Color, Pos, Role, PromotableRole, Replay, Status, Move, MoveOrDrop }
 import chess.variant.Variant
+import chess.variant.Crazyhouse
 import chess.format.UciDump
 
 object Main extends JSApp {
@@ -76,6 +77,25 @@ object Main extends JSApp {
                 move(variant, fen, pgnMoves, uciMoves, orig, dest, Role.promotable(promotion), path)
               case None =>
                 sendError(data.topic, s"step topic params: $origS, $destS, $fen are not valid")
+            }
+          }
+          case "drop" => {
+            val roleS = payload.role.asInstanceOf[String]
+            val posS = payload.pos.asInstanceOf[String]
+            val pgnMovesOpt = payload.pgnMoves.asInstanceOf[js.UndefOr[js.Array[String]]].toOption
+            val uciMovesOpt = payload.uciMoves.asInstanceOf[js.UndefOr[js.Array[String]]].toOption
+            val pgnMoves = pgnMovesOpt.map(_.toList).getOrElse(List.empty[String])
+            val uciMoves = uciMovesOpt.map(_.toList).getOrElse(List.empty[String])
+            val path = payload.path.asInstanceOf[js.UndefOr[String]].toOption
+            (for {
+              pos <- Pos.posAt(posS)
+              role <- Role.allByName get roleS.capitalize
+              fen <- fen
+            } yield (pos, role, fen)) match {
+              case Some((pos, role, fen)) =>
+                drop(variant, fen, pgnMoves, uciMoves, role, pos, path)
+              case None =>
+                sendError(data.topic, s"step topic params: $posS, $fen are not valid")
             }
           }
           case "pgnRead" => {
@@ -179,6 +199,24 @@ object Main extends JSApp {
       }
     }
 
+    def drop(variant: Option[Variant], fen: String, pgnMoves: List[String], uciMoves: List[String], role: Role, pos: Pos, path: Option[String]): Unit = {
+      Game(variant, Some(fen)).drop(role, pos) match {
+        case Success((newGame, drop)) => {
+          val ucilm = UciDump.move(newGame.board.variant)(Right(drop))
+          val mergedUciMoves = uciMoves :+ ucilm
+
+          self.postMessage(Message(
+            topic = "drop",
+            payload = jsobj(
+              "situation" -> gameToSituationInfo(newGame.withPgnMoves(pgnMoves ++ newGame.pgnMoves), mergedUciMoves),
+              "path" -> path.orUndefined
+            )
+          ))
+        }
+        case Failure(errors) => sendError("drop", errors.head)
+      }
+    }
+
     def sendError(callerTopic: String, error: String): Unit =
       self.postMessage(Message(
         topic = "error",
@@ -197,12 +235,14 @@ object Main extends JSApp {
 
     val movable = !game.situation.end
     val emptyDests: js.Dictionary[js.Array[String]] = js.Dictionary()
+    val emptyDrops: js.Array[String] = js.Array()
 
     new SituationInfo {
       val variant = game.board.variant.key
       val fen = chess.format.Forsyth >> game
       val player = game.player.name
       val dests = if (movable) possibleDests(game) else emptyDests
+      val drops = if (movable) possibleDrops(game) else emptyDrops
       val end = game.situation.end
       val playable = game.situation.playable(true)
       val winner = game.situation.winner.map(_.name).orUndefined
@@ -220,6 +260,14 @@ object Main extends JSApp {
           "name" -> s.name
           )
       }.orUndefined
+      val crazyhouse = game.board.crazyData.map { d =>
+        jsobj(
+          "pockets" -> jsobj(
+              "white" -> d.pockets.white.roles.toJSArray,
+              "black" -> d.pockets.black.roles.toJSArray
+            )
+          )
+      }.orUndefined
       val ply = game.turns
     }
   }
@@ -228,6 +276,10 @@ object Main extends JSApp {
     game.situation.destinations.map {
       case (pos, dests) => (pos.toString -> dests.map(_.toString).toJSArray)
     }.toJSDictionary
+  }
+
+  private def possibleDrops(game: Game): js.Array[String] = {
+    Crazyhouse.possibleDrops(game.situation).map(_.toString).toJSArray
   }
 
   private def replayGames(
@@ -275,6 +327,7 @@ trait SituationInfo extends js.Object {
   val fen: String
   val player: String
   val dests: js.Dictionary[js.Array[String]]
+  val drops: js.Array[String]
   val end: Boolean
   val playable: Boolean
   val status: js.UndefOr[js.Object]
@@ -284,5 +337,6 @@ trait SituationInfo extends js.Object {
   val pgnMoves: js.Array[String]
   val uciMoves: js.Array[String]
   val promotion: js.UndefOr[String]
+  val crazyhouse: js.UndefOr[js.Object]
   val ply: Int
 }

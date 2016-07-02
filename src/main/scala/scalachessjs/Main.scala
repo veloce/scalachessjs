@@ -235,14 +235,13 @@ object Main extends JSApp {
 
     val movable = !game.situation.end
     val emptyDests: js.Dictionary[js.Array[String]] = js.Dictionary()
-    val emptyDrops: js.Array[String] = js.Array()
 
     new SituationInfo {
       val variant = game.board.variant.key
       val fen = chess.format.Forsyth >> game
       val player = game.player.name
       val dests = if (movable) possibleDests(game) else emptyDests
-      val drops = if (movable) possibleDrops(game) else emptyDrops
+      val drops = possibleDrops(game)
       val end = game.situation.end
       val playable = game.situation.playable(true)
       val winner = game.situation.winner.map(_.name).orUndefined
@@ -278,11 +277,10 @@ object Main extends JSApp {
     }.toJSDictionary
   }
 
-  private def possibleDrops(game: Game): js.Array[String] = {
-    game.situation.drops match {
-      case Some(drops) => drops.map(_.toString).toJSArray
-      case None => js.Array()
-    }
+  private def possibleDrops(game: Game): js.UndefOr[js.Array[String]] = {
+    game.situation.drops.map { drops =>
+      drops.map(_.toString).toJSArray
+    }.orUndefined
   }
 
   private def replayGames(
@@ -330,7 +328,7 @@ trait SituationInfo extends js.Object {
   val fen: String
   val player: String
   val dests: js.Dictionary[js.Array[String]]
-  val drops: js.Array[String]
+  val drops: js.UndefOr[js.Array[String]]
   val end: Boolean
   val playable: Boolean
   val status: js.UndefOr[js.Object]

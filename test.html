@@ -18,6 +18,10 @@
             console.timeEnd('move');
             console.info('move', e.data.payload);
             break;
+          case 'drop':
+            console.timeEnd('drop');
+            console.info('drop', e.data.payload);
+            break;
           case 'threefoldTest':
             console.timeEnd('threefoldTest');
             console.info('threefoldTest', e.data.payload);
@@ -62,6 +66,21 @@
             uciMoves: ['e2e4', 'e7e5'],
             orig: 'd2',
             dest: 'd4',
+            path: '0'
+          }
+        });
+      }
+      function drop() {
+        console.time('drop');
+        worker.postMessage({
+          topic: 'drop',
+          payload: {
+            fen: 'r6k/ppp2qbp/7P/3p1pP1/5Rp1/4Pp1n/P1P2PPP/1R1Q1RK1/bbnnbn w - - 73 38',
+            variant: 'crazyhouse',
+            pgnMoves: [],
+            uciMoves: [],
+            role: 'knight',
+            pos: 'c5',
             path: '0'
           }
         });

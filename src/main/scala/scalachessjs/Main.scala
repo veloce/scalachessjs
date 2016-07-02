@@ -89,13 +89,13 @@ object Main extends JSApp {
             val path = payload.path.asInstanceOf[js.UndefOr[String]].toOption
             (for {
               pos <- Pos.posAt(posS)
-              role <- Role.allByName get roleS.capitalize
+              role <- Role.allByName get roleS
               fen <- fen
             } yield (pos, role, fen)) match {
               case Some((pos, role, fen)) =>
                 drop(variant, fen, pgnMoves, uciMoves, role, pos, path)
               case None =>
-                sendError(data.topic, s"step topic params: $posS, $fen are not valid")
+                sendError(data.topic, s"step topic params: $posS, $roleS, $fen are not valid")
             }
           }
           case "pgnRead" => {

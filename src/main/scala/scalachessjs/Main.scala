@@ -279,7 +279,10 @@ object Main extends JSApp {
   }
 
   private def possibleDrops(game: Game): js.Array[String] = {
-    Crazyhouse.possibleDrops(game.situation).map(_.toString).toJSArray
+    Crazyhouse.possibleDrops(game.situation) match {
+      case Some(drops) => drops.map(_.toString).toJSArray
+      case None => js.Array()
+    }
   }
 
   private def replayGames(

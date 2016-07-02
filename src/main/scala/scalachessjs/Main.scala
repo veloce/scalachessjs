@@ -262,9 +262,9 @@ object Main extends JSApp {
       }.orUndefined
       val crazyhouse = game.board.crazyData.map { d =>
         jsobj(
-          "pockets" -> jsobj(
-              "white" -> d.pockets.white.roles.toJSArray,
-              "black" -> d.pockets.black.roles.toJSArray
+          "pockets" -> js.Array(
+              d.pockets.white.roles.map(_.name).groupBy(identity).mapValues(_.size).toJSDictionary,
+              d.pockets.black.roles.map(_.name).groupBy(identity).mapValues(_.size).toJSDictionary
             )
           )
       }.orUndefined

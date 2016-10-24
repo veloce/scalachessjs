@@ -30,7 +30,7 @@ object PgnDump {
       val d = jsnew(g.Date)()
       List(
         Tag(_.Event, "Casual Game"),
-        Tag(_.Site, "http://lichess.org"),
+        Tag(_.Site, "https://lichess.org"),
         Tag(_.Date, date getOrElse d.toLocaleDateString()),
         Tag(_.White, white getOrElse "Anonymous"),
         Tag(_.Black, black getOrElse "Anonymous"),

@@ -20,8 +20,8 @@ object Main extends JSApp {
     self.addEventListener("message", { e: dom.MessageEvent =>
 
       try {
-
         val data = e.data.asInstanceOf[Message]
+        val reqidOpt = data.reqid.asInstanceOf[js.UndefOr[String]].toOption
         val payload = data.payload.asInstanceOf[js.Dynamic]
         val fen = payload.fen.asInstanceOf[js.UndefOr[String]].toOption
         val variantKey = payload.variant.asInstanceOf[js.UndefOr[String]].toOption
@@ -30,14 +30,14 @@ object Main extends JSApp {
         data.topic match {
 
           case "init" => {
-            init(variant, fen)
+            init(reqidOpt, variant, fen)
           }
           case "dests" => {
             val path = payload.path.asInstanceOf[js.UndefOr[String]].toOption
             fen.fold {
-              sendError(data.topic, "fen field is required for dests topic")
+              sendError(reqidOpt, data.topic, "fen field is required for dests topic")
             } { fen =>
-              getDests(variant, fen, path)
+              getDests(reqidOpt, variant, fen, path)
             }
           }
           case "threefoldTest" => {
@@ -46,6 +46,7 @@ object Main extends JSApp {
             Replay(pgnMoves, initialFen, variant getOrElse Variant.default) match {
               case Success(replay) => {
                 self.postMessage(Message(
+                  reqid = reqidOpt,
                   topic = "threefoldTest",
                   payload = jsobj(
                     "threefoldRepetition" -> replay.state.board.history.threefoldRepetition,
@@ -56,7 +57,7 @@ object Main extends JSApp {
                   )
                 ))
               }
-              case Failure(errors) => sendError(data.topic, errors.head)
+              case Failure(errors) => sendError(reqidOpt, data.topic, errors.head)
             }
           }
           case "move" => {
@@ -74,9 +75,9 @@ object Main extends JSApp {
               fen <- fen
             } yield (orig, dest, fen)) match {
               case Some((orig, dest, fen)) =>
-                move(variant, fen, pgnMoves, uciMoves, orig, dest, Role.promotable(promotion), path)
+                move(reqidOpt, variant, fen, pgnMoves, uciMoves, orig, dest, Role.promotable(promotion), path)
               case None =>
-                sendError(data.topic, s"step topic params: $origS, $destS, $fen are not valid")
+                sendError(reqidOpt, data.topic, s"step topic params: $origS, $destS, $fen are not valid")
             }
           }
           case "drop" => {
@@ -93,9 +94,9 @@ object Main extends JSApp {
               fen <- fen
             } yield (pos, role, fen)) match {
               case Some((pos, role, fen)) =>
-                drop(variant, fen, pgnMoves, uciMoves, role, pos, path)
+                drop(reqidOpt, variant, fen, pgnMoves, uciMoves, role, pos, path)
               case None =>
-                sendError(data.topic, s"step topic params: $posS, $roleS, $fen are not valid")
+                sendError(reqidOpt, data.topic, s"step topic params: $posS, $roleS, $fen are not valid")
             }
           }
           case "pgnRead" => {
@@ -107,6 +108,7 @@ object Main extends JSApp {
             } yield (replay, games)) match {
               case Success((replay, listOfGames)) => {
                 self.postMessage(Message(
+                  reqid = reqidOpt,
                   topic = "pgnRead",
                   payload = jsobj(
                     "variant" -> new VariantInfo {
@@ -120,7 +122,7 @@ object Main extends JSApp {
                   )
                 ))
               }
-              case Failure(errors) => sendError(data.topic, errors.head)
+              case Failure(errors) => sendError(reqidOpt, data.topic, errors.head)
             }
           }
           case "pgnDump" => {
@@ -133,30 +135,33 @@ object Main extends JSApp {
               case Success(replay) => {
                 val pgn = PgnDump(replay.state, initialFen, replay.setup.startedAtTurn + 1, white, black, date)
                 self.postMessage(Message(
+                  reqid = reqidOpt,
                   topic = "pgnDump",
                   payload = jsobj(
                     "pgn" -> pgn.toString
                   )
                 ))
               }
-              case Failure(errors) => sendError(data.topic, errors.head)
+              case Failure(errors) => sendError(reqidOpt, data.topic, errors.head)
             }
           }
           case _ => {
-            sendError(data.topic, "Invalid command.")
+            sendError(reqidOpt, data.topic, "Invalid command.")
           }
         }
       } catch {
         case ex: Exception => {
           val data = e.data.asInstanceOf[Message]
-          sendError(data.topic, "Exception caught in scalachessjs: " + ex)
+          val reqidOpt = data.reqid.asInstanceOf[js.UndefOr[String]].toOption
+          sendError(reqidOpt, data.topic, "Exception caught in scalachessjs: " + ex)
         }
       }
     })
 
-    def init(variant: Option[Variant], fen: Option[String]): Unit = {
+    def init(reqid: Option[String], variant: Option[Variant], fen: Option[String]): Unit = {
       val game = Game(variant, fen)
       self.postMessage(Message(
+        reqid = reqid,
         topic = "init",
         payload = jsobj(
           "variant" -> new VariantInfo {
@@ -170,9 +175,10 @@ object Main extends JSApp {
       ))
     }
 
-    def getDests(variant: Option[Variant], fen: String, path: Option[String]): Unit = {
+    def getDests(reqid: Option[String], variant: Option[Variant], fen: String, path: Option[String]): Unit = {
       val game = Game(variant, Some(fen))
       self.postMessage(Message(
+        reqid = reqid,
         topic = "dests",
         payload = jsobj(
           "dests" -> possibleDests(game),
@@ -181,13 +187,14 @@ object Main extends JSApp {
       ))
     }
 
-    def move(variant: Option[Variant], fen: String, pgnMoves: List[String], uciMoves: List[String], orig: Pos, dest: Pos, promotion: Option[PromotableRole], path: Option[String]): Unit = {
+    def move(reqid: Option[String], variant: Option[Variant], fen: String, pgnMoves: List[String], uciMoves: List[String], orig: Pos, dest: Pos, promotion: Option[PromotableRole], path: Option[String]): Unit = {
       Game(variant, Some(fen))(orig, dest, promotion) match {
         case Success((newGame, move)) => {
           val ucilm = UciDump.move(newGame.board.variant)(Left(move))
           val mergedUciMoves = uciMoves :+ ucilm
 
           self.postMessage(Message(
+            reqid = reqid,
             topic = "move",
             payload = jsobj(
               "situation" -> gameToSituationInfo(newGame.withPgnMoves(pgnMoves ++ newGame.pgnMoves), mergedUciMoves, promotion),
@@ -195,17 +202,18 @@ object Main extends JSApp {
             )
           ))
         }
-        case Failure(errors) => sendError("move", errors.head)
+        case Failure(errors) => sendError(reqid, "move", errors.head)
       }
     }
 
-    def drop(variant: Option[Variant], fen: String, pgnMoves: List[String], uciMoves: List[String], role: Role, pos: Pos, path: Option[String]): Unit = {
+    def drop(reqid: Option[String], variant: Option[Variant], fen: String, pgnMoves: List[String], uciMoves: List[String], role: Role, pos: Pos, path: Option[String]): Unit = {
       Game(variant, Some(fen)).drop(role, pos) match {
         case Success((newGame, drop)) => {
           val ucilm = UciDump.move(newGame.board.variant)(Right(drop))
           val mergedUciMoves = uciMoves :+ ucilm
 
           self.postMessage(Message(
+            reqid = reqid,
             topic = "drop",
             payload = jsobj(
               "situation" -> gameToSituationInfo(newGame.withPgnMoves(pgnMoves ++ newGame.pgnMoves), mergedUciMoves),
@@ -213,12 +221,13 @@ object Main extends JSApp {
             )
           ))
         }
-        case Failure(errors) => sendError("drop", errors.head)
+        case Failure(errors) => sendError(reqid, "drop", errors.head)
       }
     }
 
-    def sendError(callerTopic: String, error: String): Unit =
+    def sendError(reqid: Option[String], callerTopic: String, error: String): Unit =
       self.postMessage(Message(
+        reqid = reqid,
         topic = "error",
         payload = jsobj(
           "callerTopic" -> callerTopic,
@@ -307,11 +316,12 @@ object Main extends JSApp {
 trait Message extends js.Object {
   val topic: String
   val payload: js.Any
+  val reqid: js.UndefOr[String]
 }
 
 object Message {
-  def apply(topic: String, payload: js.Any): Message =
-    js.Dynamic.literal(topic = topic, payload = payload).asInstanceOf[Message]
+  def apply(topic: String, payload: js.Any, reqid: Option[String]): Message =
+    js.Dynamic.literal(topic = topic, payload = payload, reqid = reqid.orUndefined).asInstanceOf[Message]
 }
 
 @ScalaJSDefined

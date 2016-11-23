@@ -16,7 +16,7 @@
             break;
           case 'move':
             console.timeEnd('move');
-            console.info('move', e.data.payload);
+            console.info('move', e.data);
             break;
           case 'drop':
             console.timeEnd('drop');
@@ -59,6 +59,7 @@
         console.time('move');
         worker.postMessage({
           topic: 'move',
+          reqid: String(performance.now()),
           payload: {
             fen: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2 +0+0',
             variant: 'threeCheck',

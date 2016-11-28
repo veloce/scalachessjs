@@ -33,10 +33,11 @@ Generated file will be in `build` dir.
 
 The same format is used for requests and responses:
 
-```js
+```ts
 {
-  topic: [String],
-  payload: [Object]
+  topic: string,
+  payload?: Object,
+  reqid?: string
 }
 ```
 

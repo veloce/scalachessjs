@@ -33,16 +33,18 @@ Generated file will be in `build` dir.
 
 The same format is used for requests and responses:
 
-```ts
-{
-  topic: string,
-  payload?: Object,
+```typescript
+interface ScalachessMessage {
+  topic: string
+  payload?: Object
   reqid?: string
 }
 ```
 
-The library will always reply with the same `topic` field of the request.
-`payload` is either request arguments or response data.
+The worker will always reply with the same `topic` field of the request.
+`payload` is either request arguments or response data. The optional `reqid`
+can be used to differentiate responses if you are sending a lot of requests with
+the same topic at the same time.
 
 ### Topics
 
@@ -140,13 +142,15 @@ worker.postMessage({
     orig: 'd2',
     dest: 'd4',
     path: '0'
-  }
+  },
+  reqid: '1'
 });
 ```
 
 Response:
 ```js
 {
+    "reqid": "1",
     "path": "0",
     "situation": {
         "check": false,

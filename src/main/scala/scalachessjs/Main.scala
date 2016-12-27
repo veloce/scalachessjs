@@ -40,6 +40,22 @@ object Main extends JSApp {
               getDests(reqidOpt, variant, fen, path)
             }
           }
+          case "situation" => {
+            val path = payload.path.asInstanceOf[js.UndefOr[String]].toOption
+            fen.fold {
+              sendError(reqidOpt, data.topic, "fen field is required for situation topic")
+            } { fen =>
+              val game = Game(variant, Some(fen))
+              self.postMessage(Message(
+                reqid = reqidOpt,
+                topic = "situation",
+                payload = jsobj(
+                  "situation" -> gameToSituationInfo(game),
+                  "path" -> path.orUndefined
+                )
+              ))
+            }
+          }
           case "threefoldTest" => {
             val pgnMoves = payload.pgnMoves.asInstanceOf[js.Array[String]].toList
             val initialFen = payload.initialFen.asInstanceOf[js.UndefOr[String]].toOption
@@ -177,11 +193,13 @@ object Main extends JSApp {
 
     def getDests(reqid: Option[String], variant: Option[Variant], fen: String, path: Option[String]): Unit = {
       val game = Game(variant, Some(fen))
+      val movable = !game.situation.end
+      val dests = if (movable) possibleDests(game) else emptyDests
       self.postMessage(Message(
         reqid = reqid,
         topic = "dests",
         payload = jsobj(
-          "dests" -> possibleDests(game),
+          "dests" -> dests,
           "path" -> path.orUndefined
         )
       ))
@@ -236,6 +254,8 @@ object Main extends JSApp {
       ))
   }
 
+  private val emptyDests: js.Dictionary[js.Array[String]] = js.Dictionary()
+
   private def gameToSituationInfo(
     game: Game,
     mergedUciMoves: List[String] = List.empty[String],
@@ -243,7 +263,6 @@ object Main extends JSApp {
   ): js.Object = {
 
     val movable = !game.situation.end
-    val emptyDests: js.Dictionary[js.Array[String]] = js.Dictionary()
 
     new SituationInfo {
       val variant = game.board.variant.key

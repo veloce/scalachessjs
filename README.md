@@ -1,6 +1,6 @@
-# scalachessjs
+# scalachess.js
 
-scalachessjs is a chess library that runs in a webworker, with multi-variants support.
+scalachess.js is a chess library that runs in a webworker, with multi-variants support.
 
 It is based on the awesome [scalachess](https://github.com/ornicar/scalachess) library
 compiled to JavaScript, thanks to [Scala.js](https://www.scala-js.org/).

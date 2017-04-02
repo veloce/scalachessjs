@@ -11,6 +11,7 @@ import chess.{ Valid, Success, Failure, Board, Game, Color, Pos, Role, Promotabl
 import chess.variant.Variant
 import chess.variant.Crazyhouse
 import chess.format.UciDump
+import chess.opening.FullOpeningDB
 
 object Main extends JSApp {
   def main(): Unit = {
@@ -159,6 +160,28 @@ object Main extends JSApp {
                 ))
               }
               case Failure(errors) => sendError(reqidOpt, data.topic, errors.head)
+            }
+          }
+          case "opening" => {
+            val pgnMoves = payload.pgnMoves.asInstanceOf[js.Array[String]].toList
+            FullOpeningDB.search(pgnMoves) match {
+              case Some(opening) => self.postMessage(Message(
+                topic = "opening",
+                reqid = reqidOpt,
+                payload = jsobj(
+                  "opening" -> jsobj(
+                    "eco" -> opening.opening.eco,
+                    "name" -> opening.opening.name,
+                    "fen" -> opening.opening.fen
+                  ),
+                  "ply" -> opening.ply
+                )
+              ))
+              case None => self.postMessage(Message(
+                topic = "opening",
+                reqid = reqidOpt,
+                payload = null
+              ))
             }
           }
           case _ => {

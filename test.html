@@ -37,6 +37,10 @@
             console.timeEnd('pgnDump');
             console.info('pgnDump', e.data.payload.pgn);
             break;
+          case 'opening':
+            console.timeEnd('opening');
+            console.info('opening', e.data.payload);
+            break;
           case 'error':
             console.error(e.data.payload);
             break;

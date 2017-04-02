@@ -3,13 +3,12 @@ package scalachessjs
 import scala.scalajs.js.JSApp
 import scala.scalajs.js
 import org.scalajs.dom
-import js.Dynamic.{ global => g, newInstance => jsnew, literal => jsobj }
+import js.Dynamic.{ /* global => g, newInstance => jsnew, */ literal => jsobj }
 import js.JSConverters._
 import js.annotation._
 
-import chess.{ Valid, Success, Failure, Board, Game, Color, Pos, Role, PromotableRole, Replay, Status, Move, MoveOrDrop }
+import chess.{ Valid, Success, Failure, Game, Pos, Role, PromotableRole, Replay, Status, MoveOrDrop }
 import chess.variant.Variant
-import chess.variant.Crazyhouse
 import chess.format.UciDump
 
 object Main extends JSApp {
@@ -54,6 +53,8 @@ object Main extends JSApp {
                   "path" -> path.orUndefined
                 )
               ))
+
+              ()
             }
           }
           case "threefoldTest" => {
@@ -189,6 +190,8 @@ object Main extends JSApp {
           "setup" -> gameToSituationInfo(game)
         )
       ))
+
+      ()
     }
 
     def getDests(reqid: Option[String], variant: Option[Variant], fen: String, path: Option[String]): Unit = {
@@ -203,6 +206,8 @@ object Main extends JSApp {
           "path" -> path.orUndefined
         )
       ))
+
+      ()
     }
 
     def move(reqid: Option[String], variant: Option[Variant], fen: String, pgnMoves: List[String], uciMoves: List[String], orig: Pos, dest: Pos, promotion: Option[PromotableRole], path: Option[String]): Unit = {
@@ -219,6 +224,8 @@ object Main extends JSApp {
               "path" -> path.orUndefined
             )
           ))
+
+          ()
         }
         case Failure(errors) => sendError(reqid, "move", errors.head)
       }
@@ -238,12 +245,14 @@ object Main extends JSApp {
               "path" -> path.orUndefined
             )
           ))
+
+          ()
         }
         case Failure(errors) => sendError(reqid, "drop", errors.head)
       }
     }
 
-    def sendError(reqid: Option[String], callerTopic: String, error: String): Unit =
+    def sendError(reqid: Option[String], callerTopic: String, error: String): Unit = {
       self.postMessage(Message(
         reqid = reqid,
         topic = "error",
@@ -252,6 +261,9 @@ object Main extends JSApp {
           "error" -> error
         )
       ))
+
+      ()
+    }
   }
 
   private val emptyDests: js.Dictionary[js.Array[String]] = js.Dictionary()

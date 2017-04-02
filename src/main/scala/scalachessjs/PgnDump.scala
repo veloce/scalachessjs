@@ -1,7 +1,6 @@
 package scalachessjs
 
-import chess.format.Forsyth
-import chess.format.pgn.{ Pgn, Tag, Parser, ParsedPgn }
+import chess.format.pgn.{ Pgn, Tag }
 import chess.format.{ pgn => chessPgn }
 import chess.Game
 

@@ -16,7 +16,7 @@ object PgnDump {
     white: Option[String] = None,
     black: Option[String] = None,
     date: Option[String] = None): Pgn = {
-    val ts = tags(game, initialFen, white, black)
+    val ts = tags(game, initialFen, white, black, date)
     Pgn(ts, turns(game.pgnMoves, startedAtTurn))
   }
 
@@ -30,7 +30,7 @@ object PgnDump {
       List(
         Tag(_.Event, "Casual Game"),
         Tag(_.Site, "https://lichess.org"),
-        Tag(_.Date, date getOrElse d.toLocaleDateString()),
+        Tag(_.Date, date getOrElse d.toLocaleString()),
         Tag(_.White, white getOrElse "Anonymous"),
         Tag(_.Black, black getOrElse "Anonymous"),
         Tag(_.Result, result(game)),

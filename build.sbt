@@ -9,7 +9,7 @@ scalaVersion := "2.11.8"
 libraryDependencies ++= List(
   "org.scala-js" %%% "scalajs-dom" % "0.9.1",
   "org.specs2" %% "specs2-core" % "3.6" % "test",
-  "joda-time" % "joda-time" % "2.9.7",
+  "org.scala-js" %%% "scalajs-java-time" % "0.2.1",
   "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
   "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0"
 )

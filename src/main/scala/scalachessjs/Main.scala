@@ -9,7 +9,7 @@ import js.annotation._
 
 import chess.{ Valid, Success, Failure, Game, Pos, Role, PromotableRole, Replay, Status, MoveOrDrop }
 import chess.variant.Variant
-import chess.format.{ Uci, UciCharPair }
+import chess.format.{ UciCharPair, UciDump }
 
 object Main extends JSApp {
   def main(): Unit = {
@@ -213,13 +213,11 @@ object Main extends JSApp {
     def move(reqid: Option[String], variant: Option[Variant], fen: String, pgnMoves: List[String], uciMoves: List[String], orig: Pos, dest: Pos, promotion: Option[PromotableRole], path: Option[String]): Unit = {
       Game(variant, Some(fen))(orig, dest, promotion) match {
         case Success((newGame, move)) => {
-          val uci = Uci(move)
-
           self.postMessage(Message(
             reqid = reqid,
             topic = "move",
             payload = jsobj(
-              "situation" -> gameToSituationInfo(newGame.withPgnMoves(pgnMoves ++ newGame.pgnMoves), Some(uci), uciMoves, promotion),
+              "situation" -> gameToSituationInfo(newGame.withPgnMoves(pgnMoves ++ newGame.pgnMoves), Some(Left(move)), uciMoves, promotion),
               "path" -> path.orUndefined
             )
           ))
@@ -233,13 +231,11 @@ object Main extends JSApp {
     def drop(reqid: Option[String], variant: Option[Variant], fen: String, pgnMoves: List[String], uciMoves: List[String], role: Role, pos: Pos, path: Option[String]): Unit = {
       Game(variant, Some(fen)).drop(role, pos) match {
         case Success((newGame, drop)) => {
-          val uci = Uci(drop)
-
           self.postMessage(Message(
             reqid = reqid,
             topic = "drop",
             payload = jsobj(
-              "situation" -> gameToSituationInfo(newGame.withPgnMoves(pgnMoves ++ newGame.pgnMoves), Some(uci), uciMoves),
+              "situation" -> gameToSituationInfo(newGame.withPgnMoves(pgnMoves ++ newGame.pgnMoves), Some(Right(drop)), uciMoves),
               "path" -> path.orUndefined
             )
           ))
@@ -266,20 +262,26 @@ object Main extends JSApp {
 
   private val emptyDests: js.Dictionary[js.Array[String]] = js.Dictionary()
 
+  private def moveOrDropToUciCharPair(m: MoveOrDrop): UciCharPair =
+    UciCharPair(m.fold(_.toUci, _.toUci))
+
   private def gameToSituationInfo(
     game: Game,
-    lastMoveUci: Option[Uci] = None,
+    lastMoveOpt: Option[MoveOrDrop] = None,
     prevUciMoves: List[String] = List.empty[String],
     promotionRole: Option[PromotableRole] = None
   ): js.Object = {
 
-    val mergedUciMoves = lastMoveUci.fold(prevUciMoves) { lm =>
-      prevUciMoves :+ lm.uci
+    val lmUci = lastMoveOpt.map(UciDump.move(game.board.variant)(_))
+
+    val mergedUciMoves = lmUci.fold(prevUciMoves) { uci =>
+      prevUciMoves :+ uci
     }
     val movable = !game.situation.end
 
+
     new SituationInfo {
-      val nodeId = lastMoveUci.fold("")(UciCharPair(_).toString)
+      val nodeId = lastMoveOpt.fold("")(moveOrDropToUciCharPair(_).toString)
       val variant = game.board.variant.key
       val fen = chess.format.Forsyth >> game
       val player = game.player.name
@@ -293,7 +295,7 @@ object Main extends JSApp {
         "white" -> game.board.history.checkCount.white,
         "black" -> game.board.history.checkCount.black
       )
-      val lastMove = lastMoveUci.map(_.uci).orUndefined
+      val lastMove = lmUci.orUndefined
       val pgnMoves = game.pgnMoves.toJSArray
       val uciMoves = mergedUciMoves.toJSArray
       val promotion = promotionRole.map(_.forsyth).map(_.toString).orUndefined

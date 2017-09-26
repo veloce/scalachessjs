@@ -279,7 +279,6 @@ object Main extends JSApp {
     }
     val movable = !game.situation.end
 
-
     new SituationInfo {
       val nodeId = lastMoveOpt.fold("")(moveOrDropToUciCharPair(_).toString)
       val variant = game.board.variant.key
@@ -291,10 +290,10 @@ object Main extends JSApp {
       val playable = game.situation.playable(true)
       val winner = game.situation.winner.map(_.name).orUndefined
       val check = game.situation.check
-      val checkCount = jsobj(
+      val checkCount = (if (game.board.variant.key == "threeCheck") Some(jsobj(
         "white" -> game.board.history.checkCount.white,
         "black" -> game.board.history.checkCount.black
-      )
+      )) else None).orUndefined
       val lastMove = lmUci.orUndefined
       val pgnMoves = game.pgnMoves.toJSArray
       val uciMoves = mergedUciMoves.toJSArray
@@ -383,7 +382,7 @@ trait SituationInfo extends js.Object {
   val status: js.UndefOr[js.Object]
   val winner: js.UndefOr[String]
   val check: Boolean
-  val checkCount: js.Object
+  val checkCount: js.UndefOr[js.Object]
   val lastMove: js.UndefOr[String]
   val pgnMoves: js.Array[String]
   val uciMoves: js.Array[String]

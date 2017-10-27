@@ -49,7 +49,7 @@ object Main extends JSApp {
                 reqid = reqidOpt,
                 topic = "situation",
                 payload = jsobj(
-                  "situation" -> gameToSituationInfo(game),
+                  "situation" -> gameSituation(game),
                   "path" -> path.orUndefined
                 )
               ))
@@ -161,7 +161,7 @@ object Main extends JSApp {
             val shortName = game.board.variant.shortName
             val title = game.board.variant.title
           },
-          "setup" -> gameToSituationInfo(game)
+          "setup" -> gameSituation(game)
         )
       ))
 
@@ -191,7 +191,7 @@ object Main extends JSApp {
             reqid = reqid,
             topic = "move",
             payload = jsobj(
-              "situation" -> gameToSituationInfo(newGame.withPgnMoves(pgnMoves ++ newGame.pgnMoves), Some(Left(move)), uciMoves, promotion),
+              "situation" -> gameSituation(newGame.withPgnMoves(pgnMoves ++ newGame.pgnMoves), Some(Left(move)), uciMoves, promotion),
               "path" -> path.orUndefined
             )
           ))
@@ -209,7 +209,7 @@ object Main extends JSApp {
             reqid = reqid,
             topic = "drop",
             payload = jsobj(
-              "situation" -> gameToSituationInfo(newGame.withPgnMoves(pgnMoves ++ newGame.pgnMoves), Some(Right(drop)), uciMoves),
+              "situation" -> gameSituation(newGame.withPgnMoves(pgnMoves ++ newGame.pgnMoves), Some(Right(drop)), uciMoves),
               "path" -> path.orUndefined
             )
           ))
@@ -239,7 +239,7 @@ object Main extends JSApp {
   private def moveOrDropToUciCharPair(m: MoveOrDrop): UciCharPair =
     UciCharPair(m.fold(_.toUci, _.toUci))
 
-  private def gameToSituationInfo(
+  private def gameSituation(
     game: Game,
     lastMoveOpt: Option[MoveOrDrop] = None,
     prevUciMoves: List[String] = List.empty[String],
@@ -253,8 +253,8 @@ object Main extends JSApp {
     }
     val movable = !game.situation.end
 
-    new SituationInfo {
-      val nodeId = lastMoveOpt.fold("")(moveOrDropToUciCharPair(_).toString)
+    new Situation {
+      val id = lastMoveOpt.fold("")(moveOrDropToUciCharPair(_).toString)
       val variant = game.board.variant.key
       val fen = chess.format.Forsyth >> game
       val player = game.player.name
@@ -268,7 +268,8 @@ object Main extends JSApp {
         "white" -> game.board.history.checkCount.white,
         "black" -> game.board.history.checkCount.black
       )) else None).orUndefined
-      val lastMove = lmUci.orUndefined
+      val uci = lmUci.orUndefined
+      val san = game.pgnMoves.lastOption.orUndefined
       val pgnMoves = game.pgnMoves.toJSArray
       val uciMoves = mergedUciMoves.toJSArray
       val promotion = promotionRole.map(_.forsyth).map(_.toString).orUndefined
@@ -324,8 +325,8 @@ trait VariantInfo extends js.Object {
 }
 
 @ScalaJSDefined
-trait SituationInfo extends js.Object {
-  val nodeId: String // useful for tree format in analysis
+trait Situation extends js.Object {
+  val id: String
   val ply: Int
   val variant: String
   val fen: String
@@ -338,9 +339,10 @@ trait SituationInfo extends js.Object {
   val winner: js.UndefOr[String]
   val check: Boolean
   val checkCount: js.UndefOr[js.Object]
-  val lastMove: js.UndefOr[String]
   val pgnMoves: js.Array[String]
   val uciMoves: js.Array[String]
+  val san: js.UndefOr[String]
+  val uci: js.UndefOr[String]
   val promotion: js.UndefOr[String]
   val crazyhouse: js.UndefOr[js.Object]
 }

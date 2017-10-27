@@ -7,7 +7,7 @@ import js.Dynamic.{ /* global => g, newInstance => jsnew, */ literal => jsobj }
 import js.JSConverters._
 import js.annotation._
 
-import chess.{ Valid, Success, Failure, Game, Pos, Role, PromotableRole, Replay, Status, MoveOrDrop }
+import chess.{ Success, Failure, Game, Pos, Role, PromotableRole, Replay, Status, MoveOrDrop }
 import chess.variant.Variant
 import chess.format.{ UciCharPair, UciDump }
 
@@ -114,32 +114,6 @@ object Main extends JSApp {
                 drop(reqidOpt, variant, fen, pgnMoves, uciMoves, role, pos, path)
               case None =>
                 sendError(reqidOpt, data.topic, s"step topic params: $posS, $roleS, $fen are not valid")
-            }
-          }
-          case "pgnRead" => {
-            val pgn = payload.pgn.asInstanceOf[String]
-            (for {
-              replay <- chess.format.pgn.Reader.full(pgn)
-              fen = chess.format.Forsyth >> replay.setup
-              games <- replayGames(replay.chronoMoves, Some(fen), replay.setup.board.variant)
-            } yield (replay, games)) match {
-              case Success((replay, listOfGames)) => {
-                self.postMessage(Message(
-                  reqid = reqidOpt,
-                  topic = "pgnRead",
-                  payload = jsobj(
-                    "variant" -> new VariantInfo {
-                      val key = replay.setup.board.variant.key
-                      val name = replay.setup.board.variant.name
-                      val shortName = replay.setup.board.variant.shortName
-                      val title = replay.setup.board.variant.title
-                    },
-                    "setup" -> gameToSituationInfo(replay.setup),
-                    "replay" -> listOfGames.map(gameToSituationInfo(_)).toJSArray
-                  )
-                ))
-              }
-              case Failure(errors) => sendError(reqidOpt, data.topic, errors.head)
             }
           }
           case "pgnDump" => {
@@ -327,26 +301,7 @@ object Main extends JSApp {
       drops.map(_.toString).toJSArray
     }.orUndefined
   }
-
-  private def replayGames(
-    moves: List[MoveOrDrop],
-    initialFen: Option[String],
-    variant: chess.variant.Variant): Valid[List[Game]] = {
-      val game = Game(Some(variant), initialFen)
-      recursiveGames(game, moves) map { game :: _ }
-  }
-
-  private def recursiveGames(game: Game, moves: List[MoveOrDrop]): Valid[List[Game]] =
-    moves match {
-      case Nil => Success(Nil)
-      case moveOrDrop :: rest => {
-        val newGame = moveOrDrop.fold(game.apply, game.applyDrop)
-        recursiveGames(newGame, rest) map { newGame :: _ }
-      }
-    }
-
 }
-
 
 @js.native
 trait Message extends js.Object {

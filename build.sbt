@@ -20,7 +20,12 @@ resolvers ++= Seq(
 scalacOptions ++= Seq(
   "-deprecation",
   "-unchecked",
-  "-Ywarn-unused-import", "-Ywarn-value-discard", "-Ywarn-dead-code",
+  "-Xlint",
+  "-Ywarn-infer-any",
+  "-Ywarn-dead-code",
+  "-Ywarn-unused",
+  "-Ywarn-unused-import",
+  "-Ywarn-value-discard",
   "-Ybackend:GenBCode", "-Ydelambdafy:method", "-target:jvm-1.8")
 
 emitSourceMaps := false

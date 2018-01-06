@@ -6,7 +6,7 @@ It is based on the awesome [scalachess](https://github.com/ornicar/scalachess) l
 compiled to JavaScript, thanks to [Scala.js](https://www.scala-js.org/).
 
 It is currently used in production in [lichess.org](http://lichess.org) mobile
-application. So you can see a [real world usage](https://github.com/veloce/lichobile/blob/master/src/js/chess.ts) on [the mobile app repo](https://github.com/veloce/lichobile).
+application. So you can see a [real world usage](https://github.com/veloce/lichobile/blob/master/src/chess.ts) on [the mobile app repo](https://github.com/veloce/lichobile).
 
 ## Features
 

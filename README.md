@@ -10,8 +10,7 @@ application. So you can see a [real world usage](https://github.com/veloce/licho
 
 ## Features
 
-* Fully asynchronous: runs in a web worker, it does not block your UI while you're
-  computing chess logic.
+* Fully asynchronous and does not block the main thread: as it is executed in a web worker, you can safely compute chess logic while running screen animations
 * Completely stateless: you send the complete game position in each request,
 either with FEN or PGN
 * Built from extensively tested code: the scalachess library is by itself well tested
@@ -42,7 +41,7 @@ interface ScalachessMessage {
 ```
 
 The worker will always reply with the same `topic` field of the request.
-`payload` is either request arguments or response data. The optional `reqid`
+`payload` is either request or response data. The optional `reqid`
 can be used to differentiate responses if you are sending a lot of requests with
 the same topic at the same time.
 
@@ -60,6 +59,8 @@ the same topic at the same time.
 * `pgnRead` parse a PGN string a returns the whole game history
 * `pgnDump` takes an initial FEN, a list of moves and returns a formatted PGN
   string
+  
+An up-to-date and complete API documentation for all topics can be found in the [typescript interfaces](https://github.com/veloce/lichobile/blob/master/src/chess.ts#L34) of lichess mobile client.
 
 #### Init
 

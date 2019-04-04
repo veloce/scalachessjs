@@ -1,6 +1,6 @@
 package scalachessjs
 
-import chess.format.pgn.{ Pgn, Tag }
+import chess.format.pgn.{ Pgn, Tag, Tags }
 import chess.format.{ pgn => chessPgn }
 import chess.Game
 
@@ -25,9 +25,9 @@ object PgnDump {
     initialFen: Option[String],
     white: Option[String] = None,
     black: Option[String] = None,
-    date: Option[String] = None): List[Tag] = {
+    date: Option[String] = None): Tags = {
       val d = jsnew(g.Date)()
-      List(
+      Tags(List(
         Tag(_.Event, "Casual Game"),
         Tag(_.Site, "https://lichess.org"),
         Tag(_.Date, date getOrElse d.toLocaleString()),
@@ -38,10 +38,10 @@ object PgnDump {
         Tag(_.FEN, initialFen getOrElse "?"),
         Tag(_.Variant, game.board.variant.name.capitalize),
         Tag(_.Termination, game.situation.status.fold("?")(s => s.name))
-      )
+      ))
   }
 
-  private def turns(moves: List[String], from: Int): List[chessPgn.Turn] =
+  private def turns(moves: Vector[String], from: Int): List[chessPgn.Turn] =
     (moves grouped 2).zipWithIndex.toList map {
       case (moves, index) => chessPgn.Turn(
         number = index + from,

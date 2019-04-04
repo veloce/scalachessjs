@@ -10,6 +10,7 @@ import js.annotation._
 import chess.{ Success, Failure, Game, Pos, Role, PromotableRole, Replay, Status, MoveOrDrop }
 import chess.variant.Variant
 import chess.format.{ UciCharPair, UciDump }
+import chess.format.pgn.Reader
 
 object Main extends JSApp {
   def main(): Unit = {
@@ -61,7 +62,7 @@ object Main extends JSApp {
             val pgnMoves = payload.pgnMoves.asInstanceOf[js.Array[String]].toList
             val initialFen = payload.initialFen.asInstanceOf[js.UndefOr[String]].toOption
             Replay(pgnMoves, initialFen, variant getOrElse Variant.default) match {
-              case Success(replay) => {
+              case Success(Reader.Result.Complete(replay)) => {
                 self.postMessage(Message(
                   reqid = reqidOpt,
                   topic = "threefoldTest",
@@ -74,6 +75,7 @@ object Main extends JSApp {
                   )
                 ))
               }
+              case Success(Reader.Result.Incomplete(_, errors)) => sendError(reqidOpt, data.topic, errors.head)
               case Failure(errors) => sendError(reqidOpt, data.topic, errors.head)
             }
           }
@@ -83,7 +85,7 @@ object Main extends JSApp {
             val destS = payload.dest.asInstanceOf[String]
             val pgnMovesOpt = payload.pgnMoves.asInstanceOf[js.UndefOr[js.Array[String]]].toOption
             val uciMovesOpt = payload.uciMoves.asInstanceOf[js.UndefOr[js.Array[String]]].toOption
-            val pgnMoves = pgnMovesOpt.map(_.toList).getOrElse(List.empty[String])
+            val pgnMoves = pgnMovesOpt.map(_.toVector).getOrElse(Vector.empty[String])
             val uciMoves = uciMovesOpt.map(_.toList).getOrElse(List.empty[String])
             val path = payload.path.asInstanceOf[js.UndefOr[String]].toOption
             (for {
@@ -102,7 +104,7 @@ object Main extends JSApp {
             val posS = payload.pos.asInstanceOf[String]
             val pgnMovesOpt = payload.pgnMoves.asInstanceOf[js.UndefOr[js.Array[String]]].toOption
             val uciMovesOpt = payload.uciMoves.asInstanceOf[js.UndefOr[js.Array[String]]].toOption
-            val pgnMoves = pgnMovesOpt.map(_.toList).getOrElse(List.empty[String])
+            val pgnMoves = pgnMovesOpt.map(_.toVector).getOrElse(Vector.empty[String])
             val uciMoves = uciMovesOpt.map(_.toList).getOrElse(List.empty[String])
             val path = payload.path.asInstanceOf[js.UndefOr[String]].toOption
             (for {
@@ -123,7 +125,7 @@ object Main extends JSApp {
             val black = payload.black.asInstanceOf[js.UndefOr[String]].toOption
             val date = payload.date.asInstanceOf[js.UndefOr[String]].toOption
             Replay(pgnMoves, initialFen, variant getOrElse Variant.default) match {
-              case Success(replay) => {
+              case Success(Reader.Result.Complete(replay)) => {
                 val pgn = PgnDump(replay.state, initialFen, replay.setup.startedAtTurn + 1, white, black, date)
                 self.postMessage(Message(
                   reqid = reqidOpt,
@@ -133,6 +135,7 @@ object Main extends JSApp {
                   )
                 ))
               }
+              case Success(Reader.Result.Incomplete(_, errors)) => sendError(reqidOpt, data.topic, errors.head)
               case Failure(errors) => sendError(reqidOpt, data.topic, errors.head)
             }
           }
@@ -184,7 +187,7 @@ object Main extends JSApp {
       ()
     }
 
-    def move(reqid: Option[String], variant: Option[Variant], fen: String, pgnMoves: List[String], uciMoves: List[String], orig: Pos, dest: Pos, promotion: Option[PromotableRole], path: Option[String]): Unit = {
+    def move(reqid: Option[String], variant: Option[Variant], fen: String, pgnMoves: Vector[String], uciMoves: List[String], orig: Pos, dest: Pos, promotion: Option[PromotableRole], path: Option[String]): Unit = {
       Game(variant, Some(fen))(orig, dest, promotion) match {
         case Success((newGame, move)) => {
           self.postMessage(Message(
@@ -202,7 +205,7 @@ object Main extends JSApp {
       }
     }
 
-    def drop(reqid: Option[String], variant: Option[Variant], fen: String, pgnMoves: List[String], uciMoves: List[String], role: Role, pos: Pos, path: Option[String]): Unit = {
+    def drop(reqid: Option[String], variant: Option[Variant], fen: String, pgnMoves: Vector[String], uciMoves: List[String], role: Role, pos: Pos, path: Option[String]): Unit = {
       Game(variant, Some(fen)).drop(role, pos) match {
         case Success((newGame, drop)) => {
           self.postMessage(Message(

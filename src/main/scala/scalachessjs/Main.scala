@@ -126,7 +126,7 @@ object Main extends JSApp {
             val date = payload.date.asInstanceOf[js.UndefOr[String]].toOption
             Replay(pgnMoves, initialFen, variant getOrElse Variant.default) match {
               case Success(Reader.Result.Complete(replay)) => {
-                val pgn = PgnDump(replay.state, initialFen, replay.setup.startedAtTurn + 1, white, black, date)
+                val pgn = PgnDump(replay.state, initialFen, replay.setup.startedAtTurn, white, black, date)
                 self.postMessage(Message(
                   reqid = reqidOpt,
                   topic = "pgnDump",

@@ -41,13 +41,15 @@ object PgnDump {
       ))
   }
 
-  private def turns(moves: Vector[String], from: Int): List[chessPgn.Turn] =
-    (moves grouped 2).zipWithIndex.toList map {
+  private def turns(moves: Vector[String], from: Int): List[chessPgn.Turn] = {
+    val paddedMoves = if (from % 2 == 1) ".." +: moves else moves
+    (paddedMoves grouped 2).zipWithIndex.toList map {
       case (moves, index) => chessPgn.Turn(
-        number = index + from,
+        number = index + 1 + (from / 2),
         white = moves.headOption.filter(".." !=).map(s => chessPgn.Move(s)),
         black = moves.lift(1).map(s => chessPgn.Move(s)))
     } filterNot (_.isEmpty)
+  }
 
   private def result(game: Game) = game.situation.status.fold("*") { _ =>
     game.situation.winner.fold("1/2-1/2")(c => c.fold("1-0", "0-1"))
